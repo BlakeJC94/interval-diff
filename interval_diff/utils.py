@@ -62,6 +62,7 @@ def generate_random_intervals(
     max_len: float = 100.0,
     min_len: float = 10.0,
     precision: int = 2,
+    dataframe: bool = False,
 ) -> NDArray:
     """Generate a specified number of random intervals"""
     if n_intervals < 1:
@@ -71,7 +72,14 @@ def generate_random_intervals(
     data = np.append(0.0, data)
     data = start + np.cumsum(data)
     starts, ends = data[0::2], data[1::2]
-    return np.stack([starts, ends], axis=1)
+    results = np.stack([starts, ends], axis=1)
+    if not dataframe:
+        return results
+    results = pd.DataFrame(results, columns=INTERVAL_COL_NAMES)
+    results["tags"] = [
+        DEFAULT_TAGS[i] for i in np.random.randint(0, len(DEFAULT_TAGS), n_intervals)
+    ]
+    return results
 
 
 # TODO deprecate
