@@ -18,6 +18,7 @@ setup(
     install_requires=[
         "numpy",
         "plotly",
+        "tqdm",
     ],
     extras_require={
         "dev": [
@@ -26,5 +27,8 @@ setup(
             "pylint",
             "pytest",
         ],
+    },
+    entry_points={
+        "console_scripts": ["interval-diff=interval_diff.__main__:main"],
     },
 )
