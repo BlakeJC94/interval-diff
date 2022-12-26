@@ -25,6 +25,9 @@ $ pip install .
 TODO
 
 ## Future developments
+- [ ] Write quickstart in readme
+- [ ] Implement console script to benchmark algorithms
+- [ ] Refactor tests
 - [ ] Implement algorithm for pandas DataFrames
 
 ## Contributing
