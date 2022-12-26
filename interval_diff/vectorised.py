@@ -1,16 +1,21 @@
-from typing import List, Optional, Tuple
+from typing import List, Optional, Tuple, Union
 
 import numpy as np
+import pandas as pd
 from numpy.typing import NDArray
 
-from .utils import sort_intervals_by_start, concat_interval_groups, filter_overlapping_intervals
+from .utils import (
+    sort_intervals_by_start,
+    concat_interval_groups,
+    filter_overlapping_intervals,
+)
+from .globals import INTERVAL_COL_NAMES
 
 
-# TODO handle interval metadata as well
-# IDEA append another column to intervals_a and intervals_b to track which interval is which
+# TODO test dataframe inputs
 def interval_difference(
-    intervals_a: NDArray,
-    intervals_b: NDArray,
+    intervals_a: Union[NDArray, pd.DataFrame],
+    intervals_b: Union[NDArray, pd.DataFrame],
     min_len: float = 0.0,
 ) -> NDArray:
     """Chop out sub-intervals from A that overlap with B.
@@ -27,14 +32,27 @@ def interval_difference(
     if len(intervals_a) == 0:
         return intervals_a
 
+    intervals_a_input = intervals_a
+    if isinstance(intervals_a, pd.DataFrame):
+        intervals_a_input = intervals_a.copy()
+        intervals_a = intervals_a[INTERVAL_COL_NAMES].values
+
+    if isinstance(intervals_b, pd.DataFrame):
+        intervals_b = intervals_b[INTERVAL_COL_NAMES].values
+
+    # Drop all Bs that don't overlap any interval in A
     intervals_b, _ = filter_overlapping_intervals(
         intervals_a=intervals_b,
         intervals_b=intervals_a,
     )
     if len(intervals_b) == 0:
-        return intervals_a
+        return intervals_a_input
 
+    intervals_a = append_interval_idx_column(intervals_a)
+    intervals_b = append_interval_idx_column(intervals_b)
     intervals_a, intervals_a_non_overlap = filter_overlapping_intervals(intervals_a, intervals_b)
+    if len(intervals_a) == 0:
+        return intervals_a
 
     atoms, indices = atomize_intervals(
         [intervals_a, intervals_b],
@@ -42,9 +60,22 @@ def interval_difference(
         drop_gaps=False,
     )
     mask_a_atoms = (indices[:, 0] != 0) & (indices[:, 1] == 0)
-    result = atoms[mask_a_atoms]
+    intervals_a_diff_b = np.concatenate([atoms[mask_a_atoms], indices[mask_a_atoms, 0:1]], axis=1)
+    result = concat_interval_groups([intervals_a_diff_b, intervals_a_non_overlap])
+    result, indices = result[:, :2], result[:, -1]
 
-    return concat_interval_groups([result, intervals_a_non_overlap])
+    if isinstance(intervals_a_input, pd.DataFrame):
+        metadata = intervals_a_input.drop(INTERVAL_COL_NAMES, axis=1)
+        result = pd.DataFrame(result, columns=INTERVAL_COL_NAMES)
+        result[metadata.columns] = metadata.iloc[indices]
+
+    return result
+
+
+# TODO test
+def append_interval_idx_column(intervals):
+    index = 1 + np.arange(len(intervals))
+    return np.concatenate([intervals, index[:, None]], axis=1)
 
 
 # TODO test
@@ -54,7 +85,7 @@ def points_from_intervals(interval_groups: List[NDArray]):
         n_intervals = len(intervals)
 
         index_matrix = np.zeros((n_intervals, len(interval_groups)))
-        index_matrix[:, i] = 1 + np.arange(n_intervals)
+        index_matrix[:, i] = intervals[:, -1]
         index_matrix = np.concatenate([index_matrix, -index_matrix], axis=0)
 
         points = np.concatenate([intervals[:, 0:1], intervals[:, 1:2]], axis=0)
@@ -74,8 +105,6 @@ def atomize_intervals(
     min_len: Optional[float] = 0.0,
     drop_gaps: bool = True,
 ):
-    # interval_groups = [intervals_a, intervals_b]
-
     points = points_from_intervals(interval_groups)
 
     for i in range(len(interval_groups), 1, -1):
