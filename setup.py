@@ -17,6 +17,7 @@ setup(
     packages=find_packages(),
     install_requires=[
         "numpy",
+        "plotly",
     ],
     extras_require={
         "dev": [
