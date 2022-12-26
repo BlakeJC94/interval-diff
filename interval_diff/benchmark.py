@@ -1,10 +1,13 @@
 import time
 import logging
 from itertools import product
+from collections import defaultdict
 from typing import Optional, List, Callable, Tuple, Any
 
 import numpy as np
+import pandas as pd
 from tqdm import tqdm
+from interval_diff.globals import INTERVAL_COL_NAMES
 
 from interval_diff.vectorised import interval_difference as vec_diff
 from interval_diff.non_vectorised import interval_difference as nonvec_diff
@@ -15,6 +18,8 @@ np.random.seed(1234)
 
 DEFAULT_N_INTERVALS = [20, 100, 500, 1000, 2000, 5000, 10000]
 DEFAULT_N_SAMPLES = 3
+DEFAULT_DF = False
+DATAFRAME = True
 
 
 logger = logging.getLogger(__name__)
@@ -23,6 +28,7 @@ logger = logging.getLogger(__name__)
 def benchmark(
     n_intervals: Optional[List[int]] = None,
     n_samples: Optional[int] = None,
+    dataframes: Optional[bool] = None,
     inspect: bool = True,
 ):
     if n_intervals is None:
@@ -31,47 +37,57 @@ def benchmark(
     if n_samples is None:
         n_samples = DEFAULT_N_SAMPLES
 
-    vec_times = [[] for _ in n_intervals]
-    nonvec_times = [[] for _ in n_intervals]
+    if dataframes is None:
+        dataframes = DEFAULT_DF
+
+    times = [defaultdict(list) for _ in n_intervals]
 
     # pylint: disable=invalid-name
     for (i, n), _ in tqdm(
-        list(product(enumerate(n_intervals), range(n_samples))),
+        product(enumerate(n_intervals), range(n_samples)),
         total=len(n_intervals) * n_samples,
         miniters=1,
         bar_format="{l_bar}{bar}| {n_fmt}/{total_fmt} [{elapsed}{postfix}]",
     ):
-        intervals_a = generate_random_intervals(n, start=100, max_len=100)
-        intervals_b = generate_random_intervals(n, start=0, max_len=80)
+        intervals_a = generate_random_intervals(n, start=100, max_len=100, dataframe=dataframes)
+        intervals_b = generate_random_intervals(n, start=0, max_len=80, dataframe=dataframes)
 
-        vec_elapsed, vec_result = _time_func_run(vec_diff, intervals_a, intervals_b)
-        vec_times[i].append(vec_elapsed)
-
-        nonvec_elapsed, nonvec_result = _time_func_run(nonvec_diff, intervals_a, intervals_b)
-        nonvec_times[i].append(nonvec_elapsed)
+        results = []
+        for vec in [True, False]:
+            key = "_".join([("vec" if vec else "nonvec"), ("pd" if dataframes else "np")])
+            elapsed, result = _time_func_run(
+                vec_diff if vec else nonvec_diff,
+                intervals_a,
+                intervals_b,
+            )
+            times[i][key].append(elapsed)
+            results.append(result)
 
         if inspect:
-            _inspect_if_unequal(vec_result, nonvec_result, intervals_a, intervals_b)
+            _inspect_if_unequal(*results, intervals_a, intervals_b)
 
-    _print_table(vec_times, nonvec_times, n_intervals, n_samples)
-    _write_csv(vec_times, nonvec_times, n_intervals, n_samples)
+    _print_table(times, n_intervals, n_samples, dataframes)
+    _write_csv(times, n_intervals, n_samples, dataframes)
 
 
-def _print_table(vec_times, nonvec_times, n_intervals, n_samples):
-    n_intervals_str = f"N intervals ({n_samples} samples)"
+def _print_table(times, n_intervals, n_samples, df):
+    mode = "pd" if df else "np"
+    vec_key = "vec_" + mode
+    nonvec_key = "nonvec_" + mode
+    n_intervals_str = f"[{mode}] Intervals ({n_samples} samples)"
     header = "| ".join(
         [
             f"{n_intervals_str:<32}",
-            f"{'Non-vectorised mean time (s)':<32}",
-            f"{'Vectorised mean runtime (s)':<32}",
+            f"{'Non-vec mean (s)':<32}",
+            f"{'Vec mean (s)':<32}",
         ]
     )
     print("-" * len(header))
     print(header)
     print("-" * len(header))
     for i, n in enumerate(n_intervals):
-        nonvec_mean = sum(nonvec_times[i]) / n_samples
-        vec_mean = sum(vec_times[i]) / n_samples
+        nonvec_mean = sum(times[i][nonvec_key]) / n_samples
+        vec_mean = sum(times[i][vec_key]) / n_samples
         row = "| ".join(
             [
                 f"{n:<32}",
@@ -82,8 +98,10 @@ def _print_table(vec_times, nonvec_times, n_intervals, n_samples):
         print(row)
 
 
-def _write_csv(vec_times, nonvec_times, n_intervals, n_samples):
-    with open("results.csv", "w", encoding="utf-8") as f:
+def _write_csv(times, n_intervals, n_samples, df):
+    mode = "pd" if df else "np"
+    vec_key, nonvec_key = f"vec_{mode}", f"nonvec_{mode}"
+    with open(f"results_{mode}.csv", "w", encoding="utf-8") as f:
         header = ",".join(
             [
                 "n_intervals",
@@ -93,17 +111,13 @@ def _write_csv(vec_times, nonvec_times, n_intervals, n_samples):
         )
         f.write(header + "\n")
         for n in n_intervals:
-            try:
-                row = ",".join(
-                    [
-                        f"{n}",
-                        *[f"{t}" for i in range(len(n_intervals)) for t in vec_times[i]],
-                        *[f"{t}" for i in range(len(n_intervals)) for t in nonvec_times[i]],
-                    ]
-                )
-            except:
-                breakpoint()
-                ...
+            row = ",".join(
+                [
+                    f"{n}",
+                    *[f"{t}" for i in range(len(n_intervals)) for t in times[i][vec_key]],
+                    *[f"{t}" for i in range(len(n_intervals)) for t in times[i][nonvec_key]],
+                ]
+            )
             f.write(row + "\n")
 
 
@@ -116,8 +130,21 @@ def _time_func_run(func: Callable, *args, **kwargs) -> Tuple[float, Any]:
 
 # TODO rfc
 def _inspect_if_unequal(vec_result, nonvec_result, intervals_a, intervals_b):
+    vec_metadata = None
+    if isinstance(vec_result, pd.DataFrame):
+        vec_metadata = vec_result.drop(INTERVAL_COL_NAMES, axis=1)
+        vec_result = vec_result[INTERVAL_COL_NAMES].values
+
+    nonvec_metadata = None
+    if isinstance(nonvec_result, pd.DataFrame):
+        nonvec_metadata = nonvec_result.drop(INTERVAL_COL_NAMES, axis=1)
+        nonvec_result = nonvec_result[INTERVAL_COL_NAMES].values
+
     if np.array_equal(vec_result, nonvec_result):
-        return
+        if vec_metadata is None or nonvec_metadata is None:
+            return
+        if vec_metadata.equals(nonvec_metadata):
+            return
 
     n_vec_results = len(vec_result)
     n_nonvec_results = len(nonvec_result)
