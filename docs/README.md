@@ -64,7 +64,7 @@ To visualise the intervals, the included plotly function can be used
 >>> fig.show()
 ```
 
-![Intervals figure](./img.png)
+![Intervals figure](./docs/img.png)
 
 To run a quick benchmark, use the CLI interface
 ```bash
@@ -110,7 +110,7 @@ Pull requests are most welcome!
       `./scripts/compile-requirements.sh`
     * Add dev dependencies to `setup.py` under `extras_require` and run
       `./scripts/compile-requirements-dev.sh`
-* [Semantic versioning](https://semver.org) is used in this repo (shockingly)
+* [Semantic versioning](https://semver.org) is used in this repo
     * Major version: rare, substantial changes that break backward compatibility
     * Minor version: most changes - new features, models or improvements
     * Patch version: small bug fixes and documentation-only changes
