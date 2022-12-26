@@ -1,9 +1,12 @@
 from typing import Dict, Any, List, Union, Optional
 
 import numpy as np
+import pandas as pd
 import plotly.graph_objects as go
 from numpy.typing import NDArray
 from plotly.subplots import make_subplots
+
+from interval_diff.globals import INTERVAL_COL_NAMES
 
 
 # TODO test
@@ -14,8 +17,12 @@ def plot_intervals(
     x_buffer: float = 200,
     y_buffer: float = 0.05,
 ):
-    if isinstance(intervals_group, np.ndarray):
+    if not isinstance(intervals_group, list):
         intervals_group = [intervals_group]
+
+    for i in range(len(intervals_group)):
+        if isinstance(intervals_group[i], pd.DataFrame):
+            intervals_group[i] = intervals_group[i][INTERVAL_COL_NAMES].values
 
     if isinstance(colors, str):
         colors = [colors]
