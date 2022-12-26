@@ -3,6 +3,7 @@ from typing import List, Optional, Tuple
 import numpy as np
 from numpy.typing import NDArray
 
+from .utils import sort_intervals_by_start
 from .vis import plot_intervals
 
 
@@ -35,11 +36,6 @@ def interval_difference(intervals_a: NDArray, intervals_b: NDArray) -> NDArray:
     result = atoms[mask_a_atoms]
 
     return concat_interval_groups([result, intervals_a_non_overlap])
-
-
-def sort_intervals_by_start(intervals: NDArray) -> NDArray:
-    """Sort an interval array by interval start."""
-    return intervals[np.argsort(intervals[:, 0]), :]
 
 
 def concat_interval_groups(
