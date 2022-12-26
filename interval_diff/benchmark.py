@@ -75,11 +75,11 @@ def _print_table(times, n_intervals, n_samples, df):
     vec_key = "vec_" + mode
     nonvec_key = "nonvec_" + mode
     n_intervals_str = f"[{mode}] Intervals ({n_samples} samples)"
-    header = "| ".join(
+    header = " " + "| ".join(
         [
-            f"{n_intervals_str:<32}",
-            f"{'Non-vec mean (s)':<32}",
-            f"{'Vec mean (s)':<32}",
+            f"{n_intervals_str:<28}",
+            f"{'Non-vec mean (s)':<20}",
+            f"{'Vec mean (s)':<20}",
         ]
     )
     print("-" * len(header))
@@ -88,11 +88,11 @@ def _print_table(times, n_intervals, n_samples, df):
     for i, n in enumerate(n_intervals):
         nonvec_mean = sum(times[i][nonvec_key]) / n_samples
         vec_mean = sum(times[i][vec_key]) / n_samples
-        row = "| ".join(
+        row = " " + "| ".join(
             [
-                f"{n:<32}",
-                f"{nonvec_mean:<32.6f}",
-                f"{vec_mean:<32.6f}",
+                f"{n:<28}",
+                f"{nonvec_mean:<20.6f}",
+                f"{vec_mean:<20.6f}",
             ]
         )
         print(row)
