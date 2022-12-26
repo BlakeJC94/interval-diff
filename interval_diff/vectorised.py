@@ -8,6 +8,7 @@ from .utils import (
     sort_intervals_by_start,
     concat_interval_groups,
     filter_overlapping_intervals,
+    append_interval_idx_column,
 )
 from .globals import INTERVAL_COL_NAMES
 
@@ -40,6 +41,9 @@ def interval_difference(
     if isinstance(intervals_b, pd.DataFrame):
         intervals_b = intervals_b[INTERVAL_COL_NAMES].values
 
+    intervals_a = sort_intervals_by_start(intervals_a)
+    intervals_b = sort_intervals_by_start(intervals_b)
+
     # Drop all Bs that don't overlap any interval in A
     intervals_b, _ = filter_overlapping_intervals(
         intervals_a=intervals_b,
@@ -62,20 +66,15 @@ def interval_difference(
     mask_a_atoms = (indices[:, 0] != 0) & (indices[:, 1] == 0)
     intervals_a_diff_b = np.concatenate([atoms[mask_a_atoms], indices[mask_a_atoms, 0:1]], axis=1)
     result = concat_interval_groups([intervals_a_diff_b, intervals_a_non_overlap])
-    result, indices = result[:, :2], result[:, -1]
+    result, indices = result[:, :2], (result[:, -1] - 1).astype(int)
 
     if isinstance(intervals_a_input, pd.DataFrame):
         metadata = intervals_a_input.drop(INTERVAL_COL_NAMES, axis=1)
-        result = pd.DataFrame(result, columns=INTERVAL_COL_NAMES)
-        result[metadata.columns] = metadata.iloc[indices]
+        metadata = metadata.iloc[indices].reset_index(drop=True)
+        metadata[INTERVAL_COL_NAMES] = result
+        result = metadata[intervals_a_input.columns]
 
     return result
-
-
-# TODO test
-def append_interval_idx_column(intervals):
-    index = 1 + np.arange(len(intervals))
-    return np.concatenate([intervals, index[:, None]], axis=1)
 
 
 # TODO test
