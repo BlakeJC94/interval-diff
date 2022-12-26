@@ -1,13 +1,17 @@
+from typing import Union
+
 import numpy as np
+import pandas as pd
 from numpy.typing import NDArray
 
-from .utils import sort_intervals_by_start
-from .globals import EMPTY_INTERVALS
+from .utils import sort_intervals_by_start, append_interval_idx_column
+from .globals import EMPTY_INTERVALS, INTERVAL_COL_NAMES
 
 
+# TODO test dataframe inputs
 def interval_difference(
-    labels: NDArray,
-    bounds: NDArray,
+    intervals_a: Union[NDArray, pd.DataFrame],
+    intervals_b: Union[NDArray, pd.DataFrame],
     min_len: float = 0.0,
 ) -> NDArray:
     """Clip labels in `labels` which intersect with labels in `bounds`.
@@ -21,25 +25,35 @@ def interval_difference(
     Returns:
         Array of labels that overlap `labels` and complement of `bounds`.
     """
-    if len(labels) == 0 or len(bounds) == 0:
-        return labels
+    if len(intervals_a) == 0 or len(intervals_b) == 0:
+        return intervals_a
 
-    labels = sort_intervals_by_start(labels)
-    bounds = sort_intervals_by_start(bounds)
+    intervals_a_input = intervals_a
+    if isinstance(intervals_a, pd.DataFrame):
+        intervals_a_input = intervals_a.copy()
+        intervals_a = intervals_a[INTERVAL_COL_NAMES].values
+
+    if isinstance(intervals_b, pd.DataFrame):
+        intervals_b = intervals_b[INTERVAL_COL_NAMES].values
+
+    intervals_a = sort_intervals_by_start(intervals_a)
+    intervals_b = sort_intervals_by_start(intervals_b)
+
+    intervals_a = append_interval_idx_column(intervals_a)
 
     final_labels = []
-    bound_starts, bound_ends = bounds[:, 0], bounds[:, 1]
+    bound_starts, bound_ends = intervals_b[:, 0], intervals_b[:, 1]
 
-    for i in range(len(labels)):
-        label, keep_label = labels[i, :], True
+    for i in range(len(intervals_a)):
+        label, keep_label = intervals_a[i, :], True
 
-        label_start, label_end = label
+        label_start, label_end, label_idx = label
         # FIXME
         # tag, note, confidence = label.tag, label.note, label.confidence
         # timezone, study_id = label.timezone, label.study_id
 
         # check overlap of selected `label` with bounding labels in `bounds`
-        for bound_start, bound_end in zip(bound_starts, bound_ends):
+        for bound_start, bound_end in intervals_b:
 
             # L :          (----)
             # B : (----)
@@ -72,7 +86,7 @@ def interval_difference(
             # If bound is contained in label, create new label, clip label, and check next bound
             if label_start <= bound_start and bound_end < label_end:
                 if bound_start - label_start > min_len:
-                    final_labels.append((label_start, bound_start))
+                    final_labels.append((label_start, bound_start, label_idx))
                 label_start = bound_end
                 continue
 
@@ -84,8 +98,17 @@ def interval_difference(
                 break
 
         if keep_label and label_end - label_start > min_len:
-            final_labels.append((label_start, label_end))
+            final_labels.append((label_start, label_end, label_idx))
+
+    result = np.array(final_labels)[:, :2]
+    result, indices = result[:, :2], (result[:, -1] - 1).astype(int)
+    if not isinstance(intervals_a_input, pd.DataFrame):
+        return result[:, :2] if len(final_labels) > 0 else EMPTY_INTERVALS
 
     if len(final_labels) == 0:
-        return EMPTY_INTERVALS
-    return np.array(final_labels)
+        return pd.DataFrame(columns=intervals_a_input.columns)
+
+    metadata = intervals_a_input.drop(INTERVAL_COL_NAMES, axis=1)
+    result = pd.DataFrame(result, columns=INTERVAL_COL_NAMES)
+    result[metadata.columns] = metadata.iloc[indices]
+    return result
