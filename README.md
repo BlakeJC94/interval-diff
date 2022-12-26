@@ -59,10 +59,12 @@ To visualise the intervals, the included plotly function can be used
 >>> fig = plot_intervals(
 ...     [intervals_a, intervals_b, result],
 ...     names=["A", "B", "A \ B"],
-...     colors=["yellow", "red", "yellow"],
+...     colors=["blue", "red", "blue"],
 ... )
 >>> fig.show()
 ```
+
+![Intervals figure](./img.png)
 
 To run a quick benchmark, use the CLI interface
 ```bash
