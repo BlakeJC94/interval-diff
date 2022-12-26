@@ -8,7 +8,7 @@ with open("README.md", "r", encoding="utf-8") as f:
 setup(
     name="interval_diff",
     version=__version__,
-    description="PLACEHOLDER",
+    description="Implementation of a vectorised interval set difference operation in numpy",
     long_description=long_description,
     author="BlakeJC94",
     author_email="blakejamescook@gmail.com",
@@ -16,7 +16,7 @@ setup(
     python_requires=">=3.9",
     packages=find_packages(),
     install_requires=[
-        "numpy"
+        "numpy",
     ],
     extras_require={
         "dev": [
