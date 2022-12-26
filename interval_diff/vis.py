@@ -73,10 +73,3 @@ def create_trace_from_interval(
         hoveron="fills",
         text=f"[ {start} , {end} ]",
     )
-
-
-# if __name__ == "__main__":
-#     intervals = np.array(
-#         [(100, 200), (300, 400), (500, 600), (700, 800), (1000, 1100), (1250, 1400)]
-#     )
-#     main_fig = plot_intervals([intervals, intervals])
