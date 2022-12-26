@@ -8,6 +8,7 @@ def sort_intervals_by_start(intervals: NDArray) -> NDArray:
     return intervals[np.argsort(intervals[:, 0]), :]
 
 
+# TODO test
 def generate_random_intervals(
     n_intervals: int,
     start: float = 0.0,
