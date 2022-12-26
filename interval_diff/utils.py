@@ -1,9 +1,12 @@
 from typing import Optional, List, Tuple
 
 import numpy as np
+import pandas as pd
 from numpy.typing import NDArray
 
-from .globals import EMPTY_INTERVALS
+from .globals import EMPTY_INTERVALS, INTERVAL_COL_NAMES
+
+DEFAULT_TAGS = list("QWERTY")
 
 
 def sort_intervals_by_start(intervals: NDArray) -> NDArray:
@@ -53,6 +56,12 @@ def filter_overlapping_intervals(
     a_no_overlap = intervals_a[mask_a_no_overlap, :]
 
     return a_some_overlap, a_no_overlap
+
+
+# TODO test
+def append_interval_idx_column(intervals):
+    index = 1 + np.arange(len(intervals))
+    return np.concatenate([intervals, index[:, None]], axis=1)
 
 
 # TODO test
