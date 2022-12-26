@@ -14,7 +14,17 @@ def parse_cli_input():
         help="number of intervals to run algorithms in each sample.",
     )
     parser.add_argument(
-        "--n-samples", "-k", nargs="?", type=int, help="number of random samples to run algorithms."
+        "--n-samples",
+        "-k",
+        nargs="?",
+        type=int,
+        help="number of random samples to run algorithms.",
+    )
+    parser.add_argument(
+        "--dataframes",
+        "-d",
+        action="store_true",
+        help="Whether to benchmark dataframes as well",
     )
 
     return parser.parse_args()
