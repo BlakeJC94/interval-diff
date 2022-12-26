@@ -8,12 +8,18 @@ from .utils import sort_intervals_by_start, concat_interval_groups, filter_overl
 
 # TODO handle interval metadata as well
 # IDEA append another column to intervals_a and intervals_b to track which interval is which
-def interval_difference(intervals_a: NDArray, intervals_b: NDArray) -> NDArray:
+def interval_difference(
+    intervals_a: NDArray,
+    intervals_b: NDArray,
+    min_len: float = 0.0,
+) -> NDArray:
     """Chop out sub-intervals from A that overlap with B.
 
     Args:
         intervals_a: Array representing intervals (col 0/1 represent start/end).
         intervals_b: Array representing intervals (col 0/1 represent start/end).
+        min_len: minimum allowable length of intervals to keep, intervals shorter than min_len will
+            be dropped.
 
     Returns:
         Interval difference between intervals_a and intervals_b
@@ -30,7 +36,11 @@ def interval_difference(intervals_a: NDArray, intervals_b: NDArray) -> NDArray:
 
     intervals_a, intervals_a_non_overlap = filter_overlapping_intervals(intervals_a, intervals_b)
 
-    atoms, indices = atomize_intervals(intervals_a, intervals_b)
+    atoms, indices = atomize_intervals(
+        [intervals_a, intervals_b],
+        min_len=min_len,
+        drop_gaps=False,
+    )
     mask_a_atoms = (indices[:, 0] != 0) & (indices[:, 1] == 0)
     result = atoms[mask_a_atoms]
 
@@ -59,10 +69,14 @@ def points_from_intervals(interval_groups: List[NDArray]):
 
 
 # TODO test
-def atomize_intervals(intervals_a, intervals_b, min_len: Optional[float] = 2e-8):
-    interval_groups = [intervals_a, intervals_b]
+def atomize_intervals(
+    interval_groups,
+    min_len: Optional[float] = 0.0,
+    drop_gaps: bool = True,
+):
+    # interval_groups = [intervals_a, intervals_b]
 
-    points = points_from_intervals([intervals_a, intervals_b])
+    points = points_from_intervals(interval_groups)
 
     for i in range(len(interval_groups), 1, -1):
         points[points[:, i] != 0, 1:i] = 0
@@ -71,8 +85,9 @@ def atomize_intervals(intervals_a, intervals_b, min_len: Optional[float] = 2e-8)
     start_idxs = points[:-1, 1:]
     atomized_intervals = np.concatenate([starts, ends, start_idxs], axis=1)
 
-    mask_nongap_intervals = np.sum(atomized_intervals[:, 2:], axis=1) != 0
-    atomized_intervals = atomized_intervals[mask_nongap_intervals]
+    if drop_gaps:
+        mask_nongap_intervals = np.sum(atomized_intervals[:, 2:], axis=1) != 0
+        atomized_intervals = atomized_intervals[mask_nongap_intervals]
 
     if min_len is not None:
         interval_lengths = atomized_intervals[:, 1] - atomized_intervals[:, 0]

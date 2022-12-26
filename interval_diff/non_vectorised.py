@@ -5,12 +5,18 @@ from .utils import sort_intervals_by_start
 from .globals import EMPTY_INTERVALS
 
 
-def interval_difference(labels: NDArray, bounds: NDArray, min_len: float = 2e-8) -> NDArray:
+def interval_difference(
+    labels: NDArray,
+    bounds: NDArray,
+    min_len: float = 0.0,
+) -> NDArray:
     """Clip labels in `labels` which intersect with labels in `bounds`.
 
     Args:
         labels: Labels which need to be clipped to prevent overlap with `bounds`.
         bounds: Labels to clip `labels` around.
+        min_len: minimum allowable length of intervals to keep, intervals shorter than min_len will
+            be dropped.
 
     Returns:
         Array of labels that overlap `labels` and complement of `bounds`.
