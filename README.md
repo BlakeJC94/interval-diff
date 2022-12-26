@@ -36,6 +36,8 @@ Pull requests are most welcome!
 * Requirements are managed using `pip-tools` (run `pip install pip-tools` if needed)
     * Add dependencies by adding packages to `setup.py` and running
       `./scripts/compile-requirements.sh`
+    * Add dev dependencies to `setup.py` under `extras_require` and run
+      `./scripts/compile-requirements-dev.sh`
 * [Semantic versioning](https://semver.org) is used in this repo (shockingly)
     * Major version: rare, substantial changes that break backward compatibility
     * Minor version: most changes - new features, models or improvements
