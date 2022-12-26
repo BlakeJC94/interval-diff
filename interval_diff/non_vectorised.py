@@ -1,3 +1,4 @@
+import logging
 from typing import Union
 
 import numpy as np
@@ -7,6 +8,8 @@ from numpy.typing import NDArray
 from .utils import sort_intervals_by_start, append_interval_idx_column
 from .globals import EMPTY_INTERVALS, INTERVAL_COL_NAMES
 
+
+logger = logging.getLogger(__name__)
 
 # TODO test dataframe inputs
 def interval_difference(
@@ -29,7 +32,9 @@ def interval_difference(
         return intervals_a
 
     intervals_a_input = intervals_a
-    if isinstance(intervals_a, pd.DataFrame):
+    metadata = None
+    if isinstance(intervals_a_input, pd.DataFrame):
+        metadata = intervals_a_input.drop(INTERVAL_COL_NAMES, axis=1)
         intervals_a_input = intervals_a.copy()
         intervals_a = intervals_a[INTERVAL_COL_NAMES].values
 
@@ -53,7 +58,7 @@ def interval_difference(
         # timezone, study_id = label.timezone, label.study_id
 
         # check overlap of selected `label` with bounding labels in `bounds`
-        for bound_start, bound_end in intervals_b:
+        for bound_start, bound_end in zip(bound_starts, bound_ends):
 
             # L :          (----)
             # B : (----)
@@ -101,16 +106,15 @@ def interval_difference(
             final_labels.append((label_start, label_end, label_idx))
 
     if len(final_labels) == 0:
-        if isinstance(intervals_a_input, pd.DataFrame):
+        if metadata is not None:
             return pd.DataFrame(columns=intervals_a_input.columns)
         return EMPTY_INTERVALS
 
     result = np.array(final_labels)
-    result, indices = result[:, :2], (result[:, -1] - 1).astype(int)
-    if not isinstance(intervals_a_input, pd.DataFrame):
-        return result
+    if metadata is None:
+        return result[:, :2]
 
-    metadata = intervals_a_input.drop(INTERVAL_COL_NAMES, axis=1)
+    result, indices = result[:, :2], (result[:, -1] - 1).astype(int)
     metadata = metadata.iloc[indices].reset_index(drop=True)
     metadata[INTERVAL_COL_NAMES] = result
     result = metadata[intervals_a_input.columns]
