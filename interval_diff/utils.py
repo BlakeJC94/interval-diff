@@ -1,6 +1,7 @@
 import numpy as np
 from numpy.typing import NDArray
 
+from .globals import EMPTY_INTERVALS
 
 def sort_intervals_by_start(intervals: NDArray) -> NDArray:
     """Sort an interval array by interval start."""
@@ -16,7 +17,7 @@ def generate_random_intervals(
 ) -> NDArray:
     """Generate a specified number of random intervals"""
     if n_intervals < 1:
-        return np.empty((0, 2))
+        return EMPTY_INTERVALS
     data = min_len + max_len * np.random.rand(2 * n_intervals - 1)
     data = np.around(data, precision)
     data = np.append(0.0, data)
