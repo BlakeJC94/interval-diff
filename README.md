@@ -96,9 +96,8 @@ N intervals (400 samples)       | Non-vectorised mean time (s)    | Vectorised m
 ```
 
 ## Future developments
-- [ ] Implement console script to benchmark algorithms
-- [ ] Refactor tests
 - [ ] Implement algorithm for pandas DataFrames
+- [ ] Refactor tests
 
 ## Contributing
 Pull requests are most welcome!
