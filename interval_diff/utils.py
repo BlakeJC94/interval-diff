@@ -10,6 +10,7 @@ def sort_intervals_by_start(intervals: NDArray) -> NDArray:
     """Sort an interval array by interval start."""
     return intervals[np.argsort(intervals[:, 0]), :]
 
+
 def concat_interval_groups(
     interval_groups: List[NDArray],
     sort: bool = True,
@@ -19,6 +20,7 @@ def concat_interval_groups(
     if not sort:
         return result
     return sort_intervals_by_start(result)
+
 
 def _filter_overlapping_intervals_idxs(
     intervals_a: NDArray,
@@ -51,6 +53,7 @@ def filter_overlapping_intervals(
     a_no_overlap = intervals_a[mask_a_no_overlap, :]
 
     return a_some_overlap, a_no_overlap
+
 
 # TODO test
 def generate_random_intervals(

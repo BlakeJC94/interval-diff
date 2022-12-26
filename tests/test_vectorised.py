@@ -229,5 +229,3 @@ class TestIntervalDifference:
     ):
         output = interval_difference(self.intervals_a, subtrahend)
         assert np.array_equal(expected_subtrahend_result, output)
-
-

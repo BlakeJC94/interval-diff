@@ -147,7 +147,6 @@ def test_create_intervals_from_points():
     assert np.array_equal(result, expected)
 
 
-
 class TestConcatIntervalGroups:
     intervals_a = np.array([(100, 200), (600, 700), (1100, 1200), (2000, 2200)])
     intervals_b = np.array([(80, 120), (580, 620), (1080, 1120), (1980, 2020)])
