@@ -136,10 +136,10 @@ $ interval-diff --n-intervals 10000 15000 20000 --n-samples 5
 ## Contributing
 Pull requests are most welcome!
 
-* Code is styled using `[black](https://github.com/psf/black)`
+* Code is styled using [black](https://github.com/psf/black)
     * Included in dev requirements
 * Code is linted with `pylint` (`pip install pylint`)
-* Requirements are managed using `pip-tools` (run `pip install pip-tools` if needed)
+* Requirements are managed using `pip-tools` (`pip install pip-tools`)
     * Add dependencies by adding packages to `setup.py` and running
       `./scripts/compile-requirements.sh`
     * Add dev dependencies to `setup.py` under `extras_require` and run
