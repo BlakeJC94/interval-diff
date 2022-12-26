@@ -7,3 +7,4 @@
 numpy==1.24.0             # via interval-diff (setup.py)
 plotly==5.11.0            # via interval-diff (setup.py)
 tenacity==8.1.0           # via plotly
+tqdm==4.64.1              # via interval-diff (setup.py)
