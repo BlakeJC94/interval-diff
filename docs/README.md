@@ -53,6 +53,23 @@ To use this algorithm, simply import and use it:
 #  [1250. 1300.]]
 ```
 
+This algorithm is also made to work for pandas Dataframes where the interval starts/ends are
+located in the columns `'start'`/`'end'`. Any additional metadata in other columns is preserved.
+```python
+>>> import pandas as pd
+>>> intervals_a = pd.DataFrame(intervals_a, columns=['start', 'end'])
+>>> intervals_a['tag'] = ["Q", "W", "E", "R", "Q", "R"]
+>>> intervals_b = pd.DataFrame(intervals_b, columns=['start', 'end'])
+>>> result = interval_difference(intervals_a, intervals_b)
+>>> print(result)
+#     start     end tag
+# 0   100.0   150.0   Q
+# 1   580.0   600.0   E
+# 2   700.0   720.0   R
+# 3  1070.0  1100.0   Q
+# 4  1250.0  1300.0   R
+```
+
 To visualise the intervals, the included plotly function can be used
 ```python
 >>> from interval_diff.vis import plot_intervals
