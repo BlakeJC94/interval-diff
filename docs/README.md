@@ -64,7 +64,7 @@ To visualise the intervals, the included plotly function can be used
 >>> fig.show()
 ```
 
-![Intervals figure](./docs/img.png)
+![Intervals figure](./img.png)
 
 To run a quick benchmark, use the CLI interface
 ```bash
