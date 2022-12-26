@@ -100,15 +100,18 @@ def interval_difference(
         if keep_label and label_end - label_start > min_len:
             final_labels.append((label_start, label_end, label_idx))
 
-    result = np.array(final_labels)[:, :2]
+    if len(final_labels) == 0:
+        if isinstance(intervals_a_input, pd.DataFrame):
+            return pd.DataFrame(columns=intervals_a_input.columns)
+        return EMPTY_INTERVALS
+
+    result = np.array(final_labels)
     result, indices = result[:, :2], (result[:, -1] - 1).astype(int)
     if not isinstance(intervals_a_input, pd.DataFrame):
-        return result[:, :2] if len(final_labels) > 0 else EMPTY_INTERVALS
-
-    if len(final_labels) == 0:
-        return pd.DataFrame(columns=intervals_a_input.columns)
+        return result
 
     metadata = intervals_a_input.drop(INTERVAL_COL_NAMES, axis=1)
-    result = pd.DataFrame(result, columns=INTERVAL_COL_NAMES)
-    result[metadata.columns] = metadata.iloc[indices]
+    metadata = metadata.iloc[indices].reset_index(drop=True)
+    metadata[INTERVAL_COL_NAMES] = result
+    result = metadata[intervals_a_input.columns]
     return result
