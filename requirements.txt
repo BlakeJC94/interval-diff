@@ -4,7 +4,11 @@
 #
 #    pip-compile --annotation-style=line
 #
-numpy==1.24.0             # via interval-diff (setup.py)
+numpy==1.24.0             # via interval-diff (setup.py), pandas
+pandas==1.5.2             # via interval-diff (setup.py)
 plotly==5.11.0            # via interval-diff (setup.py)
+python-dateutil==2.8.2    # via pandas
+pytz==2022.7              # via pandas
+six==1.16.0               # via python-dateutil
 tenacity==8.1.0           # via plotly
 tqdm==4.64.1              # via interval-diff (setup.py)

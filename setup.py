@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 __version__ = "0.1.0"
 
-with open("README.md", "r", encoding="utf-8") as f:
+with open("./docs/README.md", "r", encoding="utf-8") as f:
     long_description = f.read()
 
 setup(
@@ -17,6 +17,7 @@ setup(
     packages=find_packages(),
     install_requires=[
         "numpy",
+        "pandas",
         "plotly",
         "tqdm",
     ],
