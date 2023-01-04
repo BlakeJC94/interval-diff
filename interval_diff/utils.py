@@ -21,7 +21,7 @@ def generate_random_intervals(
     """Generate a specified number of random intervals"""
     if n_intervals < 1:
         return EMPTY_INTERVALS
-    data = min_len + max_len * np.random.rand(2 * n_intervals - 1)
+    data = min_len + (max_len - min_len) * np.random.rand(2 * n_intervals - 1)
     data = np.around(data, precision)
     data = np.append(0.0, data)
     data = start + np.cumsum(data)
