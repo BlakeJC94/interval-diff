@@ -3,6 +3,9 @@ import numpy as np
 
 from interval_diff.vectorised import (
     interval_difference,
+    sort_intervals_by_start,
+    concat_interval_groups,
+    filter_overlapping_intervals,
 )
 
 
@@ -229,3 +232,141 @@ class TestIntervalDifference:
     ):
         output = interval_difference(self.intervals_a, subtrahend)
         assert np.array_equal(expected_subtrahend_result, output)
+
+
+def test_sort_intervals_by_start():
+    intervals = np.array([(600, 700), (1100, 1200), (100, 200), (2000, 2200)])
+    expected = np.array([(100, 200), (600, 700), (1100, 1200), (2000, 2200)])
+    result = sort_intervals_by_start(intervals)
+    assert (result == expected).all()
+
+
+class TestConcatIntervalGroups:
+    intervals_a = np.array([(100, 200), (600, 700), (1100, 1200), (2000, 2200)])
+    intervals_b = np.array([(80, 120), (580, 620), (1080, 1120), (1980, 2020)])
+
+    def test_concat_interval_groups_sort(self):
+        expected = np.array(
+            [
+                (80, 120),
+                (100, 200),
+                (580, 620),
+                (600, 700),
+                (1080, 1120),
+                (1100, 1200),
+                (1980, 2020),
+                (2000, 2200),
+            ]
+        )
+
+        result_a = concat_interval_groups(
+            [self.intervals_a, self.intervals_b],
+            sort=True,
+        )
+        result_b = concat_interval_groups(
+            [self.intervals_b, self.intervals_a],
+            sort=True,
+        )
+
+        assert np.array_equal(result_a, result_b)
+        assert np.array_equal(result_a, expected)
+
+    def test_concat_interval_groups_no_sort(self):
+        expected = np.array(
+            [
+                (100, 200),
+                (600, 700),
+                (1100, 1200),
+                (2000, 2200),
+                (80, 120),
+                (580, 620),
+                (1080, 1120),
+                (1980, 2020),
+            ]
+        )
+
+        result = concat_interval_groups(
+            [self.intervals_a, self.intervals_b],
+            sort=False,
+        )
+
+        assert np.array_equal(result, expected)
+
+
+class TestFilterOverlappingIntervals:
+    intervals_a = np.array([(100, 200), (600, 700), (1100, 1200), (2000, 2200)])
+
+    def test_all_duplicates(self):
+        intervals_b = np.array([(100, 200), (600, 700), (1100, 1200), (2000, 2200)])
+        overlapping, non_overlapping = filter_overlapping_intervals(self.intervals_a, intervals_b)
+        assert (overlapping == self.intervals_a).all()
+        assert len(non_overlapping) == 0
+
+    def test_some_duplicates(self):
+        intervals_b = np.array([(100, 200), (1100, 1200), (2000, 2200)])
+        expected_overlapping = np.array([(100, 200), (1100, 1200), (2000, 2200)])
+        expected_non_overlapping = np.array([(600, 700)])
+
+        overlapping, non_overlapping = filter_overlapping_intervals(self.intervals_a, intervals_b)
+
+        assert (overlapping == expected_overlapping).all()
+        assert (non_overlapping == expected_non_overlapping).all()
+
+    @pytest.mark.parametrize(
+        "intervals_b",
+        [
+            # All left partial overlaps
+            np.array([(80, 120), (580, 620), (1080, 1120), (1980, 2020)]),
+            # All right partial overlaps
+            np.array([(180, 220), (680, 720), (1180, 1220), (2180, 2220)]),
+            # Some left, some right partial overlaps
+            np.array([(80, 120), (580, 620), (1180, 1220), (2180, 2220)]),
+            # All totally overlapped
+            np.array([(80, 2220)]),
+            # Some totally overlapped, others partially left overlapped
+            np.array([(80, 120), (580, 620), (1080, 2020)]),
+        ],
+    )
+    def test_all_overlapping(self, intervals_b):
+        overlapping, non_overlapping = filter_overlapping_intervals(self.intervals_a, intervals_b)
+        assert (overlapping == self.intervals_a).all()
+        assert len(non_overlapping) == 0
+
+    @pytest.mark.parametrize(
+        "intervals_b",
+        [
+            # In between intervals
+            np.array([(300, 400), (500, 550), (800, 900)]),
+            # All strictly left
+            np.array([(40, 50), (60, 70), (80, 90)]),
+            # All strictly right
+            np.array([(2540, 2550), (2560, 2570), (2580, 2590)]),
+            # All strictly non-overlapping left and right
+            np.array([(40, 50), (60, 70), (2560, 2570), (2580, 2590)]),
+        ],
+    )
+    def test_none_overlapping(self, intervals_b):
+        overlapping, non_overlapping = filter_overlapping_intervals(self.intervals_a, intervals_b)
+
+        assert len(overlapping) == 0
+        assert (non_overlapping == self.intervals_a).all()
+
+    @pytest.mark.parametrize(
+        "intervals_b",
+        [
+            # Some left partial overlaps
+            np.array([(580, 620), (1080, 1120)]),
+            # Some right partial overlaps
+            np.array([(680, 720), (1180, 1220)]),
+            # left and right partial overlaps
+            np.array([(580, 620), (1180, 1220)]),
+        ],
+    )
+    def test_some_partially_overlapping(self, intervals_b):
+        expected_overlapping = np.array([(600, 700), (1100, 1200)])
+        expected_non_overlapping = np.array([(100, 200), (2000, 2200)])
+
+        overlapping, non_overlapping = filter_overlapping_intervals(self.intervals_a, intervals_b)
+
+        assert (overlapping == expected_overlapping).all()
+        assert (non_overlapping == expected_non_overlapping).all()
