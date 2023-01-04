@@ -9,7 +9,6 @@ from .globals import EMPTY_INTERVALS, INTERVAL_COL_NAMES
 DEFAULT_TAGS = list("QWERTY")
 
 
-# TODO test
 def generate_random_intervals(
     n_intervals: int,
     start: float = 0.0,
