@@ -4,12 +4,6 @@ import numpy as np
 import pandas as pd
 from numpy.typing import NDArray
 
-from .utils import (
-    sort_intervals_by_start,
-    concat_interval_groups,
-    filter_overlapping_intervals,
-    append_interval_idx_column,
-)
 from .globals import INTERVAL_COL_NAMES
 
 
@@ -127,3 +121,58 @@ def atomize_intervals(
         atomized_intervals[:, 2:],
     )
     return atomized_intervals, interval_idxs
+
+
+def sort_intervals_by_start(intervals: NDArray) -> NDArray:
+    """Sort an interval array by interval start."""
+    return intervals[np.argsort(intervals[:, 0]), :]
+
+
+def concat_interval_groups(
+    interval_groups: List[NDArray],
+    sort: bool = True,
+) -> NDArray:
+    """Concatenate a list of interval arrays and sort result by interval start."""
+    result = np.concatenate(interval_groups, axis=0)
+    if not sort:
+        return result
+    return sort_intervals_by_start(result)
+
+
+def _filter_overlapping_intervals_idxs(
+    intervals_a: NDArray,
+    intervals_b: NDArray,
+) -> Tuple[NDArray, NDArray]:
+    # Find the index at which intervals_b starts/end would be inserted in the intervals_a
+    start_insert_idxs = np.searchsorted(intervals_b[:, 1], intervals_a[:, 0])
+    end_insert_idxs = np.searchsorted(intervals_b[:, 0], intervals_a[:, 1])
+
+    # When the insertion index is the same for both minuend start and end, then the minuend has no
+    # overlapping subtrahend intervals
+    mask_a_some_overlap = start_insert_idxs != end_insert_idxs
+    mask_a_no_overlap = start_insert_idxs == end_insert_idxs
+
+    return mask_a_some_overlap, mask_a_no_overlap
+
+
+def filter_overlapping_intervals(
+    intervals_a: NDArray,
+    intervals_b: NDArray,
+) -> Tuple[NDArray, NDArray]:
+    """Partition set of intervals A to intervals that have some overlap with B and intervals with
+    no overlap in B.
+    """
+    mask_a_some_overlap, mask_a_no_overlap = _filter_overlapping_intervals_idxs(
+        intervals_a,
+        intervals_b,
+    )
+    a_some_overlap = intervals_a[mask_a_some_overlap, :]
+    a_no_overlap = intervals_a[mask_a_no_overlap, :]
+
+    return a_some_overlap, a_no_overlap
+
+
+# TODO test
+def append_interval_idx_column(intervals):
+    index = 1 + np.arange(len(intervals))
+    return np.concatenate([intervals, index[:, None]], axis=1)

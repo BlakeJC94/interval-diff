@@ -5,7 +5,7 @@ import numpy as np
 import pandas as pd
 from numpy.typing import NDArray
 
-from .utils import sort_intervals_by_start, append_interval_idx_column
+from .vectorised import sort_intervals_by_start, append_interval_idx_column
 from .globals import EMPTY_INTERVALS, INTERVAL_COL_NAMES
 
 
