@@ -59,11 +59,10 @@ def interval_difference(
 def points_from_intervals(interval_groups: List[NDArray]):
     interval_points = []
     for i, intervals in enumerate(interval_groups):
-        intervals = append_interval_idx_column(intervals)
         n_intervals = len(intervals)
 
         index_matrix = np.zeros((n_intervals, len(interval_groups)))
-        index_matrix[:, i] = intervals[:, -1]
+        index_matrix[:, i] = np.arange(n_intervals) + 1
         index_matrix = np.concatenate([index_matrix, -index_matrix], axis=0)
 
         points = np.concatenate([intervals[:, 0:1], intervals[:, 1:2]], axis=0)
@@ -74,6 +73,7 @@ def points_from_intervals(interval_groups: List[NDArray]):
     interval_points = np.concatenate(interval_points, axis=0)
     interval_points = interval_points[np.argsort(interval_points[:, 0]), :]
     interval_points[:, 1:] = np.cumsum(interval_points[:, 1:], axis=0)
+
     return interval_points
 
 
@@ -110,9 +110,3 @@ def atomize_intervals(
 def sort_intervals_by_start(intervals: NDArray) -> NDArray:
     """Sort an interval array by interval start."""
     return intervals[np.argsort(intervals[:, 0]), :]
-
-
-# TODO test
-def append_interval_idx_column(intervals):
-    index = 1 + np.arange(len(intervals))
-    return np.concatenate([intervals, index[:, None]], axis=1)
