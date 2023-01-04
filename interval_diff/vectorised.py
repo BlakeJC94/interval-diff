@@ -24,7 +24,7 @@ def interval_difference(
     Returns:
         Interval difference between intervals_a and intervals_b
     """
-    if len(intervals_a) == 0:
+    if len(intervals_a) == 0 or len(intervals_b) == 0:
         return intervals_a
 
     intervals_a_input = intervals_a
@@ -38,19 +38,8 @@ def interval_difference(
     intervals_a = sort_intervals_by_start(intervals_a)
     intervals_b = sort_intervals_by_start(intervals_b)
 
-    # Drop all Bs that don't overlap any interval in A
-    intervals_b, _ = filter_overlapping_intervals(
-        intervals_a=intervals_b,
-        intervals_b=intervals_a,
-    )
-    if len(intervals_b) == 0:
-        return intervals_a_input
-
     intervals_a = append_interval_idx_column(intervals_a)
     intervals_b = append_interval_idx_column(intervals_b)
-    intervals_a, intervals_a_non_overlap = filter_overlapping_intervals(intervals_a, intervals_b)
-    if len(intervals_a) == 0:
-        return intervals_a
 
     atoms, indices = atomize_intervals(
         [intervals_a, intervals_b],
@@ -59,7 +48,7 @@ def interval_difference(
     )
     mask_a_atoms = (indices[:, 0] != 0) & (indices[:, 1] == 0)
     intervals_a_diff_b = np.concatenate([atoms[mask_a_atoms], indices[mask_a_atoms, 0:1]], axis=1)
-    result = concat_interval_groups([intervals_a_diff_b, intervals_a_non_overlap])
+    result = intervals_a_diff_b
     result, indices = result[:, :2], (result[:, -1] - 1).astype(int)
 
     if isinstance(intervals_a_input, pd.DataFrame):
