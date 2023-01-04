@@ -38,9 +38,6 @@ def interval_difference(
     intervals_a = sort_intervals_by_start(intervals_a)
     intervals_b = sort_intervals_by_start(intervals_b)
 
-    intervals_a = append_interval_idx_column(intervals_a)
-    intervals_b = append_interval_idx_column(intervals_b)
-
     atoms, indices = atomize_intervals(
         [intervals_a, intervals_b],
         min_len=min_len,
@@ -87,6 +84,9 @@ def atomize_intervals(
     min_len: Optional[float] = 0.0,
     drop_gaps: bool = True,
 ):
+    for intervals in interval_groups:
+        intervals = append_interval_idx_column(intervals)
+
     points = points_from_intervals(interval_groups)
 
     for i in range(len(interval_groups), 1, -1):
