@@ -43,8 +43,8 @@ def interval_difference(
         min_len=min_len,
         drop_gaps=False,
     )
-    mask_a_atoms = (indices[:, 0] != 0) & (indices[:, 1] == 0)
-    result, indices = atoms[mask_a_atoms], (indices[mask_a_atoms, 0] - 1).astype(int)
+    mask_a_atoms = (indices[:, 0] != -1) & (indices[:, 1] == -1)
+    result, indices = atoms[mask_a_atoms], indices[mask_a_atoms, 0]
 
     if isinstance(intervals_a_input, pd.DataFrame):
         metadata = intervals_a_input.drop(INTERVAL_COL_NAMES, axis=1)
@@ -59,6 +59,7 @@ def interval_difference(
 def points_from_intervals(interval_groups: List[NDArray]):
     interval_points = []
     for i, intervals in enumerate(interval_groups):
+        intervals = append_interval_idx_column(intervals)
         n_intervals = len(intervals)
 
         index_matrix = np.zeros((n_intervals, len(interval_groups)))
@@ -82,19 +83,16 @@ def atomize_intervals(
     min_len: Optional[float] = 0.0,
     drop_gaps: bool = True,
 ):
-    for i in range(len(interval_groups)):
-        interval_groups[i] = append_interval_idx_column(interval_groups[i])
-
     points = points_from_intervals(interval_groups)
     for i in range(len(interval_groups), 1, -1):
-        points[points[:, i] != 0, 1:i] = 0
+        points[points[:, i] != 0, 1:i] = 0 # TODO -1
 
     starts, ends = points[:-1, 0:1], points[1:, 0:1]
     start_idxs = points[:-1, 1:]
     atomized_intervals = np.concatenate([starts, ends, start_idxs], axis=1)
 
     if drop_gaps:
-        mask_nongap_intervals = np.sum(atomized_intervals[:, 2:], axis=1) != 0
+        mask_nongap_intervals = (atomized_intervals[:, 2:] != 0).any(axis=1)
         atomized_intervals = atomized_intervals[mask_nongap_intervals]
 
     if min_len is not None:
@@ -104,7 +102,7 @@ def atomize_intervals(
 
     atomized_intervals, interval_idxs = (
         atomized_intervals[:, :2],
-        atomized_intervals[:, 2:],
+        (atomized_intervals[:, 2:] - 1).astype(int),
     )
     return atomized_intervals, interval_idxs
 
