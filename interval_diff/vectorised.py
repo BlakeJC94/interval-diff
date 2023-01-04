@@ -44,9 +44,7 @@ def interval_difference(
         drop_gaps=False,
     )
     mask_a_atoms = (indices[:, 0] != 0) & (indices[:, 1] == 0)
-    intervals_a_diff_b = np.concatenate([atoms[mask_a_atoms], indices[mask_a_atoms, 0:1]], axis=1)
-    result = intervals_a_diff_b
-    result, indices = result[:, :2], (result[:, -1] - 1).astype(int)
+    result, indices = atoms[mask_a_atoms], (indices[mask_a_atoms, 0] - 1).astype(int)
 
     if isinstance(intervals_a_input, pd.DataFrame):
         metadata = intervals_a_input.drop(INTERVAL_COL_NAMES, axis=1)
@@ -84,11 +82,10 @@ def atomize_intervals(
     min_len: Optional[float] = 0.0,
     drop_gaps: bool = True,
 ):
-    for intervals in interval_groups:
-        intervals = append_interval_idx_column(intervals)
+    for i in range(len(interval_groups)):
+        interval_groups[i] = append_interval_idx_column(interval_groups[i])
 
     points = points_from_intervals(interval_groups)
-
     for i in range(len(interval_groups), 1, -1):
         points[points[:, i] != 0, 1:i] = 0
 
