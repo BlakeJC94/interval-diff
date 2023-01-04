@@ -4,8 +4,6 @@ import numpy as np
 from interval_diff.vectorised import (
     interval_difference,
     sort_intervals_by_start,
-    concat_interval_groups,
-    filter_overlapping_intervals,
 )
 
 
