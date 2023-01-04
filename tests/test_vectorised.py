@@ -241,58 +241,6 @@ def test_sort_intervals_by_start():
     assert (result == expected).all()
 
 
-class TestConcatIntervalGroups:
-    intervals_a = np.array([(100, 200), (600, 700), (1100, 1200), (2000, 2200)])
-    intervals_b = np.array([(80, 120), (580, 620), (1080, 1120), (1980, 2020)])
-
-    def test_concat_interval_groups_sort(self):
-        expected = np.array(
-            [
-                (80, 120),
-                (100, 200),
-                (580, 620),
-                (600, 700),
-                (1080, 1120),
-                (1100, 1200),
-                (1980, 2020),
-                (2000, 2200),
-            ]
-        )
-
-        result_a = concat_interval_groups(
-            [self.intervals_a, self.intervals_b],
-            sort=True,
-        )
-        result_b = concat_interval_groups(
-            [self.intervals_b, self.intervals_a],
-            sort=True,
-        )
-
-        assert np.array_equal(result_a, result_b)
-        assert np.array_equal(result_a, expected)
-
-    def test_concat_interval_groups_no_sort(self):
-        expected = np.array(
-            [
-                (100, 200),
-                (600, 700),
-                (1100, 1200),
-                (2000, 2200),
-                (80, 120),
-                (580, 620),
-                (1080, 1120),
-                (1980, 2020),
-            ]
-        )
-
-        result = concat_interval_groups(
-            [self.intervals_a, self.intervals_b],
-            sort=False,
-        )
-
-        assert np.array_equal(result, expected)
-
-
 class TestFilterOverlappingIntervals:
     intervals_a = np.array([(100, 200), (600, 700), (1100, 1200), (2000, 2200)])
 

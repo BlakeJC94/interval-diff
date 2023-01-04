@@ -117,17 +117,6 @@ def sort_intervals_by_start(intervals: NDArray) -> NDArray:
     return intervals[np.argsort(intervals[:, 0]), :]
 
 
-def concat_interval_groups(
-    interval_groups: List[NDArray],
-    sort: bool = True,
-) -> NDArray:
-    """Concatenate a list of interval arrays and sort result by interval start."""
-    result = np.concatenate(interval_groups, axis=0)
-    if not sort:
-        return result
-    return sort_intervals_by_start(result)
-
-
 def _filter_overlapping_intervals_idxs(
     intervals_a: NDArray,
     intervals_b: NDArray,
