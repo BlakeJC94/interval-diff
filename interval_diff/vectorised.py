@@ -72,7 +72,7 @@ def points_from_intervals(interval_groups: List[NDArray]):
 
     interval_points = np.concatenate(interval_points, axis=0)
     interval_points = interval_points[np.argsort(interval_points[:, 0]), :]
-    interval_points[:, 1:] = np.cumsum(interval_points[:, 1:], axis=0)
+    interval_points[:, 1:] = np.cumsum(interval_points[:, 1:], axis=0) - 1
 
     return interval_points
 
@@ -85,14 +85,14 @@ def atomize_intervals(
 ):
     points = points_from_intervals(interval_groups)
     for i in range(len(interval_groups), 1, -1):
-        points[points[:, i] != 0, 1:i] = 0 # TODO -1
+        points[points[:, i] != -1, 1:i] = -1
 
     starts, ends = points[:-1, 0:1], points[1:, 0:1]
     start_idxs = points[:-1, 1:]
     atomized_intervals = np.concatenate([starts, ends, start_idxs], axis=1)
 
     if drop_gaps:
-        mask_nongap_intervals = (atomized_intervals[:, 2:] != 0).any(axis=1)
+        mask_nongap_intervals = (atomized_intervals[:, 2:] != -1).any(axis=1)
         atomized_intervals = atomized_intervals[mask_nongap_intervals]
 
     if min_len is not None:
@@ -102,7 +102,7 @@ def atomize_intervals(
 
     atomized_intervals, interval_idxs = (
         atomized_intervals[:, :2],
-        (atomized_intervals[:, 2:] - 1).astype(int),
+        atomized_intervals[:, 2:].astype(int),
     )
     return atomized_intervals, interval_idxs
 
