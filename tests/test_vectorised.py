@@ -26,14 +26,14 @@ def results_equal(output, expected):
     return np.array_equal(output, expected)
 
 
-# @pytest.mark.parametrize("dataframe", [False, True])
+@pytest.mark.parametrize("df", [False, True])
 class TestIntervalDifference:
     intervals_a = np.array([(100, 200), (600, 700), (1100, 1200), (2000, 2200)])
 
     # A     : (----)  (----)  (----)  (----)         (----) (------)
     # B     :    (---------------)      (------)  (----)      (----)
     # A \ B : (--)               (-)  (-)              (--) ()
-    def test_doc_example(self):
+    def test_doc_example(self, df):
         intervals_a = np.array(
             [(100, 200), (300, 400), (500, 600), (700, 800), (1000, 1100), (1250, 1400)]
         )
@@ -84,9 +84,9 @@ class TestIntervalDifference:
             ),
         ],
     )
-    def test_some_partially_overlapping(self, intervals_b, expected):
+    def test_some_partially_overlapping(self, intervals_b, expected, df):
         result = interval_difference(
-            # parse_intervals(self.intervals_a, dataframe=dataframe),
+            # parse_intervals(self.intervals_a, dataframe=df),
             self.intervals_a,
             intervals_b,
         )
@@ -128,7 +128,7 @@ class TestIntervalDifference:
             ),
         ],
     )
-    def test_some_totally_overlapping(self, intervals_b, expected):
+    def test_some_totally_overlapping(self, intervals_b, expected, df):
         result = interval_difference(
             self.intervals_a,
             intervals_b,
@@ -149,7 +149,7 @@ class TestIntervalDifference:
             np.array([(40, 50), (60, 70), (2560, 2570), (2580, 2590)]),
         ],
     )
-    def test_none_overlapping(self, intervals_b):
+    def test_none_overlapping(self, intervals_b, df):
         expected = self.intervals_a
         result = interval_difference(
             self.intervals_a,
@@ -205,6 +205,7 @@ class TestIntervalDifference:
         self,
         minuend,
         expected_minuend_result,
+        df,
     ):
         output = interval_difference(
             minuend,
@@ -260,6 +261,7 @@ class TestIntervalDifference:
         self,
         subtrahend,
         expected_subtrahend_result,
+        df,
     ):
         output = interval_difference(
             self.intervals_a,
