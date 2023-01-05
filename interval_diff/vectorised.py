@@ -56,7 +56,7 @@ def interval_difference(
 
 
 # TODO test
-def points_from_intervals(interval_groups: List[NDArray]):
+def points_from_intervals(interval_groups: List[NDArray]) -> Tuple[NDArray]:
     n_interval_groups = len(interval_groups)
     interval_points, interval_indices = [], []
     for i, intervals in enumerate(interval_groups):
@@ -87,28 +87,28 @@ def atomize_intervals(
     interval_groups,
     min_len: Optional[float] = 0.0,
     drop_gaps: bool = True,
-):
+) -> Tuple[NDArray, NDArray]:
     points, indices = points_from_intervals(interval_groups)
     for i in range(1, len(interval_groups)):
         indices[indices[:, i] != -1, :i] = -1
 
     starts, ends = points[:-1, 0:1], points[1:, 0:1]
-    start_idxs = indices[:-1]
-    atomized_intervals = np.concatenate([starts, ends, start_idxs], axis=1)
+    interval_idxs = indices[:-1].astype(int)
+    atomized_intervals = np.concatenate([starts, ends], axis=1)
 
     if drop_gaps:
-        mask_nongap_intervals = (atomized_intervals[:, 2:] != -1).any(axis=1)
+        mask_nongap_intervals = (interval_idxs != -1).any(axis=1)
+
         atomized_intervals = atomized_intervals[mask_nongap_intervals]
+        interval_idxs = interval_idxs[mask_nongap_intervals]
 
     if min_len is not None:
         interval_lengths = atomized_intervals[:, 1] - atomized_intervals[:, 0]
         mask_above_min_len = interval_lengths > min_len
-        atomized_intervals = atomized_intervals[mask_above_min_len]
 
-    atomized_intervals, interval_idxs = (
-        atomized_intervals[:, :2],
-        atomized_intervals[:, 2:].astype(int),
-    )
+        atomized_intervals = atomized_intervals[mask_above_min_len]
+        interval_idxs = interval_idxs[mask_above_min_len]
+
     return atomized_intervals, interval_idxs
 
 
