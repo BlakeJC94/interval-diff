@@ -101,8 +101,6 @@ class TestIntervalDifference:
         result = interval_difference(intervals_a, intervals_b)
         assert self.results_equal(expected, result)
 
-    intervals_a = [(100, 200, "q"), (600, 700, "w"), (1100, 1200, "e"), (2000, 2200, "e")]
-
     @pytest.mark.parametrize(
         "intervals_a, intervals_b, expected",
         [
@@ -141,6 +139,18 @@ class TestIntervalDifference:
                 "  (q---)    (w---)    (e---)        (e----)",
                 " (-------) (--------)                      ",
                 "                      (e---)        (e----)",
+            ),
+            # 2 contained (split and trim)
+            (
+                " (q-------)(e-------)          (r--)        ",
+                "   (----)    (----)    (----)        (-----)",
+                " (q)    (q)(e)    (e)          (r--)        ",
+            ),
+            # Multiple contained
+            (
+                " (q-----------------)(e------------------)    ",
+                "   (----)    (----)    (----)        (-----)  ",
+                " (q)    (q---)    (q)(e)    (e-------)        ",
             ),
         ],
     )
@@ -186,121 +196,6 @@ class TestIntervalDifference:
             intervals_b,
         )
         assert self.results_equal(intervals_a, result)
-
-    @pytest.mark.parametrize(
-        "minuend, intervals_b, expected",
-        [
-            # Minuends have no overlap with subtrahends (return minuend unchanged)
-            (
-                "        (q-)      (e-)                     ",
-                "  (----)    (----)    (----)        (-----)",
-                "        (q-)      (e-)                     ",
-            ),
-            # All minuends overlapped by middle 2 subtrahends (return empty)
-            (
-                "             (q-)      (e-)                ",
-                "  (----)    (----)    (----)        (-----)",
-                "                                           ",
-            ),
-            # All minuends left-overlap first 3 subtrahends (trim minuend_ends)
-            (
-                "(q--)     (e--)     (e--)                  ",
-                "  (----)    (----)    (----)        (-----)",
-                "(q)       (e)       (e)                    ",
-            ),
-            # All minuends right-overlap first 3 subtrahends (trim minuend_starts)
-            (
-                "     (q--)     (e--)     (e--)             ",
-                "  (----)    (----)    (----)        (-----)",
-                "       (q)       (e)       (e)             ",
-            ),
-            # All minuends overlap first 2 subtrahends (split minuends and trim)
-            (
-                " (q-------)(e-------)                       ",
-                "   (----)    (----)    (----)        (-----)",
-                " (q)    (q)(e)    (e)                       ",
-            ),
-            # All minuends overlap multiple subtrahends (split minuends and trim)
-            (
-                " (q-----------------)(e-----------------------) ",
-                "   (----)    (----)    (----)        (-----)    ",
-                " (q)    (q---)    (q)(e)    (e-------)     (e-) ",
-            ),
-        ],
-    )
-    def test_interval_difference_minuend(
-        self,
-        minuend,
-        intervals_b,
-        expected,
-        df,
-    ):
-        minuend = self.parse_intervals(minuend, df=df)
-        intervals_b = self.parse_intervals(intervals_b, df=df)
-        expected = self.parse_intervals(expected, df=df)
-
-        output = interval_difference(minuend, intervals_b)
-        assert self.results_equal(expected, output)
-
-    intervals_a = [(100, 200, "q"), (600, 700, "w"), (1100, 1200, "e"), (2000, 2200, "e")]
-
-    @pytest.mark.parametrize(
-        "intervals_a, subtrahend, expected",
-        [
-            # Subtrahends don't overlap with minuends (return minuend unchanged)
-            (
-                "  (q---)    (w---)    (e---)        (e----)",
-                "        (--)      (--)                     ",
-                "  (q---)    (w---)    (e---)        (e----)",
-            ),
-            # Middle 2 minuends overlap all subtrahends (trim and split minuends, return non-overlap)
-            (
-                "  (q---)    (w---)    (e---)        (e----)",
-                "              ()        ()                 ",
-                "  (q---)    (w)(w)    (e)(e)        (e----)",
-            ),
-            # First 3 minuends left-overlap all subtrahends (trim minuend_ends, return non-overlap)
-            (
-                "  (q---)    (w---)    (e---)        (e----)",
-                " (---)     (---)     (---)                 ",
-                "     (q)       (w)       (e)        (e----)",
-            ),
-            # First 3 minuends right-overlap all subtrahends (trim minuend_starts, return non-overlap)
-            (
-                "  (q---)    (w---)    (e---)        (e----)",
-                "    (---)     (---)     (---)              ",
-                "  (q)       (w)       (e)           (e----)",
-            ),
-            # First 2 minuends overlapped by subtrahends (drop overlapped minuends, return non-overlap)
-            (
-                "  (q---)    (w---)    (e---)        (e----)",
-                " (------)  (------)                        ",
-                "                      (e---)        (e----)",
-            ),
-            # All minuends overlapped by 2 subtrahends (drop all minuends)
-            (
-                "  (q---)    (w---)    (e---)        (e----) ",
-                " (----------------)  (---------------------)",
-                "                                            ",
-            ),
-        ],
-    )
-    def test_interval_difference_subtrahend(
-        self,
-        intervals_a,
-        subtrahend,
-        expected,
-        df,
-    ):
-        intervals_a = self.parse_intervals(intervals_a, df=df)
-        subtrahend = self.parse_intervals(subtrahend, df=df)
-        expected = self.parse_intervals(expected, df=df)
-
-        output = interval_difference(
-            intervals_a,
-            subtrahend,
-        )
-        assert self.results_equal(expected, output)
 
 
 def test_sort_intervals_by_start():
