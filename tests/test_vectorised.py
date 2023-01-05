@@ -8,11 +8,8 @@ from interval_diff.vectorised import (
 )
 
 
-
-
 @pytest.mark.parametrize("df", [False, True])
 class TestIntervalDifference:
-
     @staticmethod
     def parse_intervals(records, df: bool):
         if isinstance(records, str):
@@ -39,10 +36,9 @@ class TestIntervalDifference:
         else:
             out = np.array([(r[0], r[1]) for r in records])
             if len(out) == 0:
-                out = np.empty((0,2))
+                out = np.empty((0, 2))
 
         return out
-
 
     @staticmethod
     def results_equal(output, expected):
@@ -106,6 +102,7 @@ class TestIntervalDifference:
         assert self.results_equal(expected, result)
 
     intervals_a = [(100, 200, "q"), (600, 700, "w"), (1100, 1200, "e"), (2000, 2200, "e")]
+
     @pytest.mark.parametrize(
         "intervals_a, intervals_b, expected",
         [
@@ -242,13 +239,11 @@ class TestIntervalDifference:
         intervals_b = self.parse_intervals(intervals_b, df=df)
         expected = self.parse_intervals(expected, df=df)
 
-        output = interval_difference(
-            minuend,
-            intervals_b
-        )
+        output = interval_difference(minuend, intervals_b)
         assert self.results_equal(expected, output)
 
     intervals_a = [(100, 200, "q"), (600, 700, "w"), (1100, 1200, "e"), (2000, 2200, "e")]
+
     @pytest.mark.parametrize(
         "intervals_a, subtrahend, expected",
         [
