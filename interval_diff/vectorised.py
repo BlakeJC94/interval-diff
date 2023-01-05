@@ -4,12 +4,6 @@ import numpy as np
 import pandas as pd
 from numpy.typing import NDArray
 
-from .utils import (
-    sort_intervals_by_start,
-    concat_interval_groups,
-    filter_overlapping_intervals,
-    append_interval_idx_column,
-)
 from .globals import INTERVAL_COL_NAMES
 
 
@@ -30,7 +24,7 @@ def interval_difference(
     Returns:
         Interval difference between intervals_a and intervals_b
     """
-    if len(intervals_a) == 0:
+    if len(intervals_a) == 0 or len(intervals_b) == 0:
         return intervals_a
 
     intervals_a_input = intervals_a
@@ -44,29 +38,13 @@ def interval_difference(
     intervals_a = sort_intervals_by_start(intervals_a)
     intervals_b = sort_intervals_by_start(intervals_b)
 
-    # Drop all Bs that don't overlap any interval in A
-    intervals_b, _ = filter_overlapping_intervals(
-        intervals_a=intervals_b,
-        intervals_b=intervals_a,
-    )
-    if len(intervals_b) == 0:
-        return intervals_a_input
-
-    intervals_a = append_interval_idx_column(intervals_a)
-    intervals_b = append_interval_idx_column(intervals_b)
-    intervals_a, intervals_a_non_overlap = filter_overlapping_intervals(intervals_a, intervals_b)
-    if len(intervals_a) == 0:
-        return intervals_a
-
     atoms, indices = atomize_intervals(
         [intervals_a, intervals_b],
         min_len=min_len,
         drop_gaps=False,
     )
-    mask_a_atoms = (indices[:, 0] != 0) & (indices[:, 1] == 0)
-    intervals_a_diff_b = np.concatenate([atoms[mask_a_atoms], indices[mask_a_atoms, 0:1]], axis=1)
-    result = concat_interval_groups([intervals_a_diff_b, intervals_a_non_overlap])
-    result, indices = result[:, :2], (result[:, -1] - 1).astype(int)
+    mask_a_atoms = (indices[:, 0] != -1) & (indices[:, 1] == -1)
+    result, indices = atoms[mask_a_atoms], indices[mask_a_atoms, 0]
 
     if isinstance(intervals_a_input, pd.DataFrame):
         metadata = intervals_a_input.drop(INTERVAL_COL_NAMES, axis=1)
@@ -78,24 +56,30 @@ def interval_difference(
 
 
 # TODO test
-def points_from_intervals(interval_groups: List[NDArray]):
-    interval_points = []
+def points_from_intervals(interval_groups: List[NDArray]) -> Tuple[NDArray]:
+    n_interval_groups = len(interval_groups)
+    interval_points, interval_indices = [], []
     for i, intervals in enumerate(interval_groups):
         n_intervals = len(intervals)
 
-        index_matrix = np.zeros((n_intervals, len(interval_groups)))
-        index_matrix[:, i] = intervals[:, -1]
-        index_matrix = np.concatenate([index_matrix, -index_matrix], axis=0)
+        indices = np.zeros((n_intervals, n_interval_groups))
+        indices[:, i] = np.arange(n_intervals) + 1
+        indices = np.concatenate([indices, -indices], axis=0)
 
         points = np.concatenate([intervals[:, 0:1], intervals[:, 1:2]], axis=0)
-        points = np.concatenate([points, index_matrix], axis=1)
 
         interval_points.append(points)
+        interval_indices.append(indices)
 
     interval_points = np.concatenate(interval_points, axis=0)
-    interval_points = interval_points[np.argsort(interval_points[:, 0]), :]
-    interval_points[:, 1:] = np.cumsum(interval_points[:, 1:], axis=0)
-    return interval_points
+    interval_indices = np.concatenate(interval_indices, axis=0)
+
+    foo = np.argsort(interval_points[:, 0])
+    interval_points = interval_points[foo, :]
+    interval_indices = interval_indices[foo, :]
+
+    interval_indices = np.cumsum(interval_indices, axis=0) - 1
+    return interval_points, interval_indices
 
 
 # TODO test
@@ -103,27 +87,31 @@ def atomize_intervals(
     interval_groups,
     min_len: Optional[float] = 0.0,
     drop_gaps: bool = True,
-):
-    points = points_from_intervals(interval_groups)
-
-    for i in range(len(interval_groups), 1, -1):
-        points[points[:, i] != 0, 1:i] = 0
+) -> Tuple[NDArray, NDArray]:
+    points, indices = points_from_intervals(interval_groups)
+    for i in range(1, len(interval_groups)):
+        indices[indices[:, i] != -1, :i] = -1
 
     starts, ends = points[:-1, 0:1], points[1:, 0:1]
-    start_idxs = points[:-1, 1:]
-    atomized_intervals = np.concatenate([starts, ends, start_idxs], axis=1)
+    interval_idxs = indices[:-1].astype(int)
+    atomized_intervals = np.concatenate([starts, ends], axis=1)
 
     if drop_gaps:
-        mask_nongap_intervals = np.sum(atomized_intervals[:, 2:], axis=1) != 0
+        mask_nongap_intervals = (interval_idxs != -1).any(axis=1)
+
         atomized_intervals = atomized_intervals[mask_nongap_intervals]
+        interval_idxs = interval_idxs[mask_nongap_intervals]
 
     if min_len is not None:
         interval_lengths = atomized_intervals[:, 1] - atomized_intervals[:, 0]
         mask_above_min_len = interval_lengths > min_len
-        atomized_intervals = atomized_intervals[mask_above_min_len]
 
-    atomized_intervals, interval_idxs = (
-        atomized_intervals[:, :2],
-        atomized_intervals[:, 2:],
-    )
+        atomized_intervals = atomized_intervals[mask_above_min_len]
+        interval_idxs = interval_idxs[mask_above_min_len]
+
     return atomized_intervals, interval_idxs
+
+
+def sort_intervals_by_start(intervals: NDArray) -> NDArray:
+    """Sort an interval array by interval start."""
+    return intervals[np.argsort(intervals[:, 0]), :]

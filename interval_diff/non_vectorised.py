@@ -5,7 +5,7 @@ import numpy as np
 import pandas as pd
 from numpy.typing import NDArray
 
-from .utils import sort_intervals_by_start, append_interval_idx_column
+from .vectorised import sort_intervals_by_start
 from .globals import EMPTY_INTERVALS, INTERVAL_COL_NAMES
 
 
@@ -44,7 +44,8 @@ def interval_difference(
     intervals_a = sort_intervals_by_start(intervals_a)
     intervals_b = sort_intervals_by_start(intervals_b)
 
-    intervals_a = append_interval_idx_column(intervals_a)
+    index = np.arange(len(intervals_a))
+    intervals_a = np.concatenate([intervals_a, index[:, None]], axis=1)
 
     final_labels = []
     bound_starts, bound_ends = intervals_b[:, 0], intervals_b[:, 1]
@@ -114,7 +115,7 @@ def interval_difference(
     if metadata is None:
         return result[:, :2]
 
-    result, indices = result[:, :2], (result[:, -1] - 1).astype(int)
+    result, indices = result[:, :2], result[:, -1].astype(int)
     metadata = metadata.iloc[indices].reset_index(drop=True)
     metadata[INTERVAL_COL_NAMES] = result
     result = metadata[intervals_a_input.columns]
