@@ -1,3 +1,5 @@
+from typing import Union
+
 import pytest
 import numpy as np
 import pandas as pd
@@ -11,21 +13,36 @@ from interval_diff.vectorised import (
 @pytest.mark.parametrize("df", [False, True])
 class TestIntervalDifference:
     @staticmethod
-    def parse_intervals(records, df: bool):
-        if isinstance(records, str):
-            starts, ends, tags = [], [], []
-            default_tag = "-"
-            for i, c in enumerate(records):
-                if c == "(":
-                    starts.append(i * 100)
-                    tags.append(records[i + 1] if records[i + 1].isalpha() else default_tag)
-                elif c == ")":
-                    ends.append(i * 100)
+    def parse_intervals(records: str, df: bool = False) -> Union[pd.DataFrame, np.ndarray]:
+        """Create an intervals array/dataframe from a string input.
 
-            if df:
-                records = list(zip(starts, ends, tags))
-            else:
-                records = list(zip(starts, ends))
+        Starts are represented as '(' and ends are represented as ')' characters. '|' characters
+        represent a start and an end. If generating a dataframe, a tags column can be added by
+        using an alphabetic character after a start character.
+        """
+        if not isinstance(records, str):
+            raise ValueError()
+
+        starts, ends, tags = [], [], []
+        default_tag = "-"
+        for i, c in enumerate(records):
+            if c == "|":
+                ends.append(i * 100)
+                starts.append(i * 100)
+                tags.append(records[i + 1] if records[i + 1].isalpha() else default_tag)
+                continue
+            if c == "(":
+                starts.append(i * 100)
+                tags.append(records[i + 1] if records[i + 1].isalpha() else default_tag)
+                continue
+            if c == ")":
+                ends.append(i * 100)
+                continue
+
+        if df:
+            records = list(zip(starts, ends, tags))
+        else:
+            records = list(zip(starts, ends))
 
         out = None
         if df:
@@ -39,6 +56,21 @@ class TestIntervalDifference:
                 out = np.empty((0, 2))
 
         return out
+
+    def test_parse_intervals(self, df):
+        records = " (a---)  (b--|c----) "
+        expected = {
+            "start": [100, 900, 1300],
+            "end": [600, 1300, 1900],
+            "tags": list("abc"),
+        }
+
+        expected = pd.DataFrame(expected)
+        if not df:
+            expected = expected[["start", "end"]].values
+
+        output = self.parse_intervals(records, df=df)
+        self.results_equal(output, expected)
 
     @staticmethod
     def results_equal(output, expected):
