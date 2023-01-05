@@ -8,10 +8,16 @@ from interval_diff.vectorised import (
 )
 
 
-def parse_intervals(records, dataframe: bool):
-    if dataframe:
-        return pd.DataFrame(records, columns=["start", "end", "tags"])
-    return np.array([(s, e) for s, e, _ in records])
+def parse_intervals(records, df: bool):
+    out = None
+    if df:
+        if len(records[0]) == 2:
+            records = [(*r, "q") for r in records]
+        columns = ["start", "end", "tags"]
+        out = pd.DataFrame(records, columns=columns)
+    else:
+        out = np.array([(r[0], r[1]) for r in records])
+    return out
 
 
 def results_equal(output, expected):
@@ -30,15 +36,35 @@ def results_equal(output, expected):
 class TestIntervalDifference:
     intervals_a = np.array([(100, 200), (600, 700), (1100, 1200), (2000, 2200)])
 
-    # A     : (----)  (----)  (----)  (----)         (----) (------)
-    # B     :    (---------------)      (------)  (----)      (----)
-    # A \ B : (--)               (-)  (-)              (--) ()
+    # A     : (q---)  (w---)  (e---)  (r---)         (t---) (y-----)
+    # B     :    (---------------)      (------)  (----)       (---)
+    # A \ B : (q-)               (e)  (r)              (t-) (y)
     def test_doc_example(self, df):
-        intervals_a = np.array(
-            [(100, 200), (300, 400), (500, 600), (700, 800), (1000, 1100), (1250, 1400)]
-        )
-        intervals_b = np.array([(150, 580), (720, 890), (930, 1070), (1300, 1400)])
-        expected = np.array([(100, 150), (580, 600), (700, 720), (1070, 1100), (1250, 1300)])
+        intervals_a = [
+            (100, 200, "q"),
+            (300, 400, "w"),
+            (500, 600, "e"),
+            (700, 800, "r"),
+            (1000, 1100, "t"),
+            (1250, 1400, "y"),
+        ]
+        intervals_b = [
+            (150, 580),
+            (720, 890),
+            (930, 1070),
+            (1300, 1400),
+        ]
+        expected = [
+            (100, 150, "q"),
+            (580, 600, "e"),
+            (700, 720, "r"),
+            (1070, 1100, "t"),
+            (1250, 1300, "y"),
+        ]
+
+        intervals_a = parse_intervals(intervals_a, df=df)
+        intervals_b = parse_intervals(intervals_b, df=df)
+        expected = parse_intervals(expected, df=df)
         result = interval_difference(intervals_a, intervals_b)
         assert results_equal(result, expected)
 
