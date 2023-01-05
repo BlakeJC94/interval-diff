@@ -48,8 +48,8 @@ class TestGenerateRandomIntervals:
                 dataframe=dataframe,
             )
 
-            durations = intervals['end'] - intervals['start']
-            inter_interval_gaps = intervals['start'].values[1:] - intervals['end'].values[:-1]
+            durations = intervals["end"] - intervals["start"]
+            inter_interval_gaps = intervals["start"].values[1:] - intervals["end"].values[:-1]
 
             assert isinstance(intervals, pd.DataFrame)
             assert len(intervals) == n_intervals
