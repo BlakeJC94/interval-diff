@@ -34,7 +34,7 @@ def results_equal(output, expected):
 
 @pytest.mark.parametrize("df", [False, True])
 class TestIntervalDifference:
-    intervals_a = np.array([(100, 200), (600, 700), (1100, 1200), (2000, 2200)])
+    intervals_a = [(100, 200, "q"), (600, 700, "w"), (1100, 1200, "e"), (2000, 2200, "e")]
 
     # A     : (q---)  (w---)  (e---)  (r---)         (t---) (y-----)
     # B     :    (---------------)      (------)  (----)       (---)
@@ -74,47 +74,41 @@ class TestIntervalDifference:
         [
             # 2 left partial overlaps
             (
-                np.array([(80, 120), (580, 620)]),
-                np.array(
-                    [
-                        (120, 200),
-                        (620, 700),
-                        (1100, 1200),
-                        (2000, 2200),
-                    ]
-                ),
+                [(80, 120), (580, 620)],
+                [
+                    (120, 200, "q"),
+                    (620, 700, "w"),
+                    (1100, 1200, "e"),
+                    (2000, 2200, "e"),
+                ],
             ),
             # 2 right partial overlaps
             (
-                np.array([(180, 220), (680, 720)]),
-                np.array(
-                    [
-                        (100, 180),
-                        (600, 680),
-                        (1100, 1200),
-                        (2000, 2200),
-                    ]
-                ),
+                [(180, 220), (680, 720)],
+                [
+                    (100, 180, 'q'),
+                    (600, 680, 'w'),
+                    (1100, 1200, 'e'),
+                    (2000, 2200, 'e'),
+                ],
             ),
             # 1 left, 1 right partial overlaps
             (
-                np.array([(80, 120), (680, 720)]),
-                np.array(
-                    [
-                        (120, 200),
-                        (600, 680),
-                        (1100, 1200),
-                        (2000, 2200),
-                    ]
-                ),
+                [(80, 120), (680, 720)],
+                [
+                    (120, 200, 'q'),
+                    (600, 680, 'w'),
+                    (1100, 1200, 'e'),
+                    (2000, 2200, 'e'),
+                ],
             ),
         ],
     )
     def test_some_partially_overlapping(self, intervals_b, expected, df):
+        expected = parse_intervals(expected, df=df)
         result = interval_difference(
-            # parse_intervals(self.intervals_a, dataframe=df),
-            self.intervals_a,
-            intervals_b,
+            parse_intervals(self.intervals_a, df=df),
+            parse_intervals(intervals_b, df=df),
         )
         assert results_equal(expected, result)
 
