@@ -130,9 +130,6 @@ $ interval-diff --n-intervals 10000 15000 20000 --n-samples 5
  20000                       | 24.554746           | 0.009645
 ```
 
-## Future developments
-- [ ] Refactor tests
-
 ## Contributing
 Pull requests are most welcome!
 
