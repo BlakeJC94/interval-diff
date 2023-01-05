@@ -1,5 +1,6 @@
 import pytest
 import numpy as np
+import pandas as pd
 
 from interval_diff.vectorised import (
     interval_difference,
@@ -7,6 +8,25 @@ from interval_diff.vectorised import (
 )
 
 
+def parse_intervals(records, dataframe: bool):
+    if dataframe:
+        return pd.DataFrame(records, columns=["start", "end", "tags"])
+    return np.array([(s, e) for s, e, _ in records])
+
+
+def results_equal(output, expected):
+    if type(output) != type(expected):
+        raise TypeError()
+    if not isinstance(output, (pd.DataFrame, np.ndarray)):
+        raise ValueError()
+
+    if isinstance(output, pd.DataFrame):
+        return output.equals(expected)
+
+    return np.array_equal(output, expected)
+
+
+# @pytest.mark.parametrize("dataframe", [False, True])
 class TestIntervalDifference:
     intervals_a = np.array([(100, 200), (600, 700), (1100, 1200), (2000, 2200)])
 
@@ -20,7 +40,7 @@ class TestIntervalDifference:
         intervals_b = np.array([(150, 580), (720, 890), (930, 1070), (1300, 1400)])
         expected = np.array([(100, 150), (580, 600), (700, 720), (1070, 1100), (1250, 1300)])
         result = interval_difference(intervals_a, intervals_b)
-        assert np.array_equal(result, expected)
+        assert results_equal(result, expected)
 
     # PASS
     @pytest.mark.parametrize(
@@ -65,8 +85,12 @@ class TestIntervalDifference:
         ],
     )
     def test_some_partially_overlapping(self, intervals_b, expected):
-        result = interval_difference(self.intervals_a, intervals_b)
-        assert np.array_equal(expected, result)
+        result = interval_difference(
+            # parse_intervals(self.intervals_a, dataframe=dataframe),
+            self.intervals_a,
+            intervals_b,
+        )
+        assert results_equal(expected, result)
 
     # PASS
     @pytest.mark.parametrize(
@@ -105,8 +129,11 @@ class TestIntervalDifference:
         ],
     )
     def test_some_totally_overlapping(self, intervals_b, expected):
-        result = interval_difference(self.intervals_a, intervals_b)
-        assert np.array_equal(expected, result)
+        result = interval_difference(
+            self.intervals_a,
+            intervals_b,
+        )
+        assert results_equal(expected, result)
 
     # PASS
     @pytest.mark.parametrize(
@@ -124,8 +151,11 @@ class TestIntervalDifference:
     )
     def test_none_overlapping(self, intervals_b):
         expected = self.intervals_a
-        result = interval_difference(self.intervals_a, intervals_b)
-        assert np.array_equal(expected, result)
+        result = interval_difference(
+            self.intervals_a,
+            intervals_b,
+        )
+        assert results_equal(expected, result)
 
     @pytest.mark.parametrize(
         "minuend, expected_minuend_result",
@@ -176,8 +206,11 @@ class TestIntervalDifference:
         minuend,
         expected_minuend_result,
     ):
-        output = interval_difference(minuend, self.intervals_a)
-        assert np.array_equal(expected_minuend_result, output)
+        output = interval_difference(
+            minuend,
+            self.intervals_a,
+        )
+        assert results_equal(expected_minuend_result, output)
 
     @pytest.mark.parametrize(
         "subtrahend, expected_subtrahend_result",
@@ -228,8 +261,11 @@ class TestIntervalDifference:
         subtrahend,
         expected_subtrahend_result,
     ):
-        output = interval_difference(self.intervals_a, subtrahend)
-        assert np.array_equal(expected_subtrahend_result, output)
+        output = interval_difference(
+            self.intervals_a,
+            subtrahend,
+        )
+        assert results_equal(expected_subtrahend_result, output)
 
 
 def test_sort_intervals_by_start():
