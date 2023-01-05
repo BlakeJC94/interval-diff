@@ -8,54 +8,56 @@ from interval_diff.vectorised import (
 )
 
 
-def parse_intervals(records, df: bool):
-    if isinstance(records, str):
-        starts, ends, tags = [], [], []
-        default_tag = "-"
-        for i, c in enumerate(records):
-            if c == "(":
-                starts.append(i * 100)
-                tags.append(records[i + 1] if records[i + 1].isalpha() else default_tag)
-            elif c == ")":
-                ends.append(i * 100)
-
-        if df:
-            records = list(zip(starts, ends, tags))
-        else:
-            records = list(zip(starts, ends))
-
-    out = None
-    if df:
-        if len(records) > 0 and len(records[0]) == 2:
-            records = [(*r, "q") for r in records]
-        columns = ["start", "end", "tags"]
-        out = pd.DataFrame(records, columns=columns)
-    else:
-        out = np.array([(r[0], r[1]) for r in records])
-        if len(out) == 0:
-            out = np.empty((0,2))
-
-    return out
-
-
-def results_equal(output, expected):
-    if type(output) != type(expected):
-        raise TypeError()
-    if not isinstance(output, (pd.DataFrame, np.ndarray)):
-        raise ValueError()
-
-    if isinstance(output, pd.DataFrame):
-        if output.empty or expected.empty:
-            return (output.columns == expected.columns).all()
-
-        return output.equals(expected)
-
-    return np.array_equal(output, expected)
 
 
 @pytest.mark.parametrize("df", [False, True])
 class TestIntervalDifference:
-    intervals_a = [(100, 200, "q"), (600, 700, "w"), (1100, 1200, "e"), (2000, 2200, "e")]
+
+    @staticmethod
+    def parse_intervals(records, df: bool):
+        if isinstance(records, str):
+            starts, ends, tags = [], [], []
+            default_tag = "-"
+            for i, c in enumerate(records):
+                if c == "(":
+                    starts.append(i * 100)
+                    tags.append(records[i + 1] if records[i + 1].isalpha() else default_tag)
+                elif c == ")":
+                    ends.append(i * 100)
+
+            if df:
+                records = list(zip(starts, ends, tags))
+            else:
+                records = list(zip(starts, ends))
+
+        out = None
+        if df:
+            if len(records) > 0 and len(records[0]) == 2:
+                records = [(*r, "q") for r in records]
+            columns = ["start", "end", "tags"]
+            out = pd.DataFrame(records, columns=columns)
+        else:
+            out = np.array([(r[0], r[1]) for r in records])
+            if len(out) == 0:
+                out = np.empty((0,2))
+
+        return out
+
+
+    @staticmethod
+    def results_equal(output, expected):
+        if type(output) != type(expected):
+            raise TypeError()
+        if not isinstance(output, (pd.DataFrame, np.ndarray)):
+            raise ValueError()
+
+        if isinstance(output, pd.DataFrame):
+            if output.empty or expected.empty:
+                return (output.columns == expected.columns).all()
+
+            return output.equals(expected)
+
+        return np.array_equal(output, expected)
 
     def test_doc_example(self, df):
         intervals_a, intervals_b, expected = (
@@ -64,13 +66,13 @@ class TestIntervalDifference:
             " (q-)               (e)  (r)              (t-) (y)",
         )
 
-        intervals_a = parse_intervals(intervals_a, df=df)
-        intervals_b = parse_intervals(intervals_b, df=df)
-        expected = parse_intervals(expected, df=df)
+        intervals_a = self.parse_intervals(intervals_a, df=df)
+        intervals_b = self.parse_intervals(intervals_b, df=df)
+        expected = self.parse_intervals(expected, df=df)
 
         result = interval_difference(intervals_a, intervals_b)
 
-        assert results_equal(result, expected)
+        assert self.results_equal(result, expected)
 
     @pytest.mark.parametrize(
         "intervals_a, intervals_b, expected",
@@ -96,12 +98,12 @@ class TestIntervalDifference:
         ],
     )
     def test_some_partially_overlapping(self, intervals_a, intervals_b, expected, df):
-        intervals_a = parse_intervals(intervals_a, df=df)
-        intervals_b = parse_intervals(intervals_b, df=df)
-        expected = parse_intervals(expected, df=df)
+        intervals_a = self.parse_intervals(intervals_a, df=df)
+        intervals_b = self.parse_intervals(intervals_b, df=df)
+        expected = self.parse_intervals(expected, df=df)
 
         result = interval_difference(intervals_a, intervals_b)
-        assert results_equal(expected, result)
+        assert self.results_equal(expected, result)
 
     intervals_a = [(100, 200, "q"), (600, 700, "w"), (1100, 1200, "e"), (2000, 2200, "e")]
     @pytest.mark.parametrize(
@@ -146,12 +148,12 @@ class TestIntervalDifference:
         ],
     )
     def test_some_totally_overlapping(self, intervals_a, intervals_b, expected, df):
-        intervals_a = parse_intervals(intervals_a, df=df)
-        intervals_b = parse_intervals(intervals_b, df=df)
-        expected = parse_intervals(expected, df=df)
+        intervals_a = self.parse_intervals(intervals_a, df=df)
+        intervals_b = self.parse_intervals(intervals_b, df=df)
+        expected = self.parse_intervals(expected, df=df)
 
         result = interval_difference(intervals_a, intervals_b)
-        assert results_equal(expected, result)
+        assert self.results_equal(expected, result)
 
     @pytest.mark.parametrize(
         "intervals_a, intervals_b",
@@ -179,14 +181,14 @@ class TestIntervalDifference:
         ],
     )
     def test_none_overlapping(self, intervals_a, intervals_b, df):
-        intervals_a = parse_intervals(intervals_a, df=df)
-        intervals_b = parse_intervals(intervals_b, df=df)
+        intervals_a = self.parse_intervals(intervals_a, df=df)
+        intervals_b = self.parse_intervals(intervals_b, df=df)
 
         result = interval_difference(
             intervals_a,
             intervals_b,
         )
-        assert results_equal(intervals_a, result)
+        assert self.results_equal(intervals_a, result)
 
     @pytest.mark.parametrize(
         "minuend, intervals_b, expected",
@@ -236,15 +238,15 @@ class TestIntervalDifference:
         expected,
         df,
     ):
-        minuend = parse_intervals(minuend, df=df)
-        intervals_b = parse_intervals(intervals_b, df=df)
-        expected = parse_intervals(expected, df=df)
+        minuend = self.parse_intervals(minuend, df=df)
+        intervals_b = self.parse_intervals(intervals_b, df=df)
+        expected = self.parse_intervals(expected, df=df)
 
         output = interval_difference(
             minuend,
             intervals_b
         )
-        assert results_equal(expected, output)
+        assert self.results_equal(expected, output)
 
     intervals_a = [(100, 200, "q"), (600, 700, "w"), (1100, 1200, "e"), (2000, 2200, "e")]
     @pytest.mark.parametrize(
@@ -295,15 +297,15 @@ class TestIntervalDifference:
         expected,
         df,
     ):
-        intervals_a = parse_intervals(intervals_a, df=df)
-        subtrahend = parse_intervals(subtrahend, df=df)
-        expected = parse_intervals(expected, df=df)
+        intervals_a = self.parse_intervals(intervals_a, df=df)
+        subtrahend = self.parse_intervals(subtrahend, df=df)
+        expected = self.parse_intervals(expected, df=df)
 
         output = interval_difference(
             intervals_a,
             subtrahend,
         )
-        assert results_equal(expected, output)
+        assert self.results_equal(expected, output)
 
 
 def test_sort_intervals_by_start():
