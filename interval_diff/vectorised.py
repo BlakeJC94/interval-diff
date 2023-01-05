@@ -57,24 +57,29 @@ def interval_difference(
 
 # TODO test
 def points_from_intervals(interval_groups: List[NDArray]):
-    interval_points = []
+    n_interval_groups = len(interval_groups)
+    interval_points, interval_indices = [], []
     for i, intervals in enumerate(interval_groups):
         n_intervals = len(intervals)
 
-        index_matrix = np.zeros((n_intervals, len(interval_groups)))
-        index_matrix[:, i] = np.arange(n_intervals) + 1
-        index_matrix = np.concatenate([index_matrix, -index_matrix], axis=0)
+        indices = np.zeros((n_intervals, n_interval_groups))
+        indices[:, i] = np.arange(n_intervals) + 1
+        indices = np.concatenate([indices, -indices], axis=0)
 
         points = np.concatenate([intervals[:, 0:1], intervals[:, 1:2]], axis=0)
-        points = np.concatenate([points, index_matrix], axis=1)
 
         interval_points.append(points)
+        interval_indices.append(indices)
 
     interval_points = np.concatenate(interval_points, axis=0)
-    interval_points = interval_points[np.argsort(interval_points[:, 0]), :]
-    interval_points[:, 1:] = np.cumsum(interval_points[:, 1:], axis=0) - 1
+    interval_indices = np.concatenate(interval_indices, axis=0)
 
-    return interval_points
+    foo = np.argsort(interval_points[:, 0])
+    interval_points = interval_points[foo, :]
+    interval_indices = interval_indices[foo, :]
+
+    interval_indices = np.cumsum(interval_indices, axis=0) - 1
+    return interval_points, interval_indices
 
 
 # TODO test
@@ -83,12 +88,12 @@ def atomize_intervals(
     min_len: Optional[float] = 0.0,
     drop_gaps: bool = True,
 ):
-    points = points_from_intervals(interval_groups)
-    for i in range(len(interval_groups), 1, -1):
-        points[points[:, i] != -1, 1:i] = -1
+    points, indices = points_from_intervals(interval_groups)
+    for i in range(1, len(interval_groups)):
+        indices[indices[:, i] != -1, :i] = -1
 
     starts, ends = points[:-1, 0:1], points[1:, 0:1]
-    start_idxs = points[:-1, 1:]
+    start_idxs = indices[:-1]
     atomized_intervals = np.concatenate([starts, ends, start_idxs], axis=1)
 
     if drop_gaps:
