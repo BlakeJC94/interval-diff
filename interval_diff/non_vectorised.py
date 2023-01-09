@@ -5,7 +5,6 @@ import numpy as np
 import pandas as pd
 from numpy.typing import NDArray
 
-from .vectorised import sort_intervals_by_start
 from .globals import EMPTY_INTERVALS, INTERVAL_COL_NAMES
 
 
@@ -120,3 +119,8 @@ def interval_difference(
     metadata[INTERVAL_COL_NAMES] = result
     result = metadata[intervals_a_input.columns]
     return result
+
+
+def sort_intervals_by_start(intervals: NDArray) -> NDArray:
+    """Sort an interval array by interval start."""
+    return intervals[np.argsort(intervals[:, 0]), :]

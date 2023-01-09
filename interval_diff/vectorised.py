@@ -35,9 +35,6 @@ def interval_difference(
     if isinstance(intervals_b, pd.DataFrame):
         intervals_b = intervals_b[INTERVAL_COL_NAMES].values
 
-    intervals_a = sort_intervals_by_start(intervals_a)
-    intervals_b = sort_intervals_by_start(intervals_b)
-
     atoms, indices = atomize_intervals(
         [intervals_a, intervals_b],
         min_len=min_len,
@@ -110,8 +107,3 @@ def atomize_intervals(
         interval_idxs = interval_idxs[mask_above_min_len]
 
     return atomized_intervals, interval_idxs
-
-
-def sort_intervals_by_start(intervals: NDArray) -> NDArray:
-    """Sort an interval array by interval start."""
-    return intervals[np.argsort(intervals[:, 0]), :]

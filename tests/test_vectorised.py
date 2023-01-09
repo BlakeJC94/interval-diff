@@ -4,10 +4,7 @@ import pytest
 import numpy as np
 import pandas as pd
 
-from interval_diff.vectorised import (
-    interval_difference,
-    sort_intervals_by_start,
-)
+from interval_diff.vectorised import interval_difference
 
 
 @pytest.mark.parametrize("df", [False, True])
@@ -228,10 +225,3 @@ class TestIntervalDifference:
             intervals_b,
         )
         assert self.results_equal(intervals_a, result)
-
-
-def test_sort_intervals_by_start():
-    intervals = np.array([(600, 700), (1100, 1200), (100, 200), (2000, 2200)])
-    expected = np.array([(100, 200), (600, 700), (1100, 1200), (2000, 2200)])
-    result = sort_intervals_by_start(intervals)
-    assert (result == expected).all()

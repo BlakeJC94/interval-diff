@@ -3,6 +3,7 @@ import numpy as np
 
 from interval_diff.non_vectorised import (
     interval_difference,
+    sort_intervals_by_start,
 )
 
 
@@ -226,3 +227,10 @@ class TestIntervalDifference:
     ):
         output = interval_difference(self.intervals_a, subtrahend)
         assert np.array_equal(expected_subtrahend_result, output)
+
+
+def test_sort_intervals_by_start():
+    intervals = np.array([(600, 700), (1100, 1200), (100, 200), (2000, 2200)])
+    expected = np.array([(100, 200), (600, 700), (1100, 1200), (2000, 2200)])
+    result = sort_intervals_by_start(intervals)
+    assert (result == expected).all()
