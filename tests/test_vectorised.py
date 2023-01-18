@@ -4,7 +4,7 @@ import pytest
 import numpy as np
 import pandas as pd
 
-from interval_diff.vectorised import interval_difference
+from interval_diff.vectorised import interval_difference, intervals_overlapping
 
 
 @pytest.mark.parametrize("df", [False, True])
@@ -68,6 +68,34 @@ class TestIntervalDifference:
 
         output = self.parse_intervals(records, df=df)
         self.results_equal(output, expected)
+
+    @pytest.mark.parametrize(
+        "intervals_a1, intervals_a2",
+        [
+            (
+                " (----)  (----)  (----)  (----)         (----) (------)",
+                "         (----)          (----)         (----)         ",
+            ),
+            (
+                " (----)  (----)  (----)  (----)         (----) (------)",
+                "          (--)              (----)   (-------)         ",
+            ),
+        ],
+    )
+    def test_intervals_overlapping(self, intervals_a1, intervals_a2, df):
+        del df  # Not used in this test
+
+        intervals_a1 = self.parse_intervals(intervals_a1, df=False)
+        intervals_a = np.concatenate(
+            [
+                intervals_a1,
+                self.parse_intervals(intervals_a2, df=False),
+            ],
+            axis=0,
+        )
+
+        assert intervals_overlapping(intervals_a1) == False
+        assert intervals_overlapping(intervals_a) == True
 
     @staticmethod
     def results_equal(output, expected):
