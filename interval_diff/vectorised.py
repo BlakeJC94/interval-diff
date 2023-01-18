@@ -57,6 +57,9 @@ def points_from_intervals(interval_groups: List[NDArray]) -> Tuple[NDArray]:
     n_interval_groups = len(interval_groups)
     interval_points, interval_indices = [], []
     for i, intervals in enumerate(interval_groups):
+        assert not intervals_overlapping(
+            intervals
+        ), "Expected the intervals within a group to be non-overlapping"
         n_intervals = len(intervals)
 
         indices = np.zeros((n_intervals, n_interval_groups))
@@ -77,6 +80,13 @@ def points_from_intervals(interval_groups: List[NDArray]) -> Tuple[NDArray]:
 
     interval_indices = np.cumsum(interval_indices, axis=0) - 1
     return interval_points, interval_indices
+
+
+def intervals_overlapping(intervals: NDArray) -> bool:
+    intervals = intervals[np.argsort(intervals[:, 0]), :]
+    starts, ends = intervals[:, 0], intervals[:, 1]
+    overlaps = starts[1:] - ends[:-1]
+    return (overlaps < 0).any()
 
 
 # TODO test
