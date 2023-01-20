@@ -78,7 +78,7 @@ def points_from_intervals(interval_groups: List[NDArray]) -> Tuple[NDArray]:
     interval_points = interval_points[foo, :]
     interval_indices = interval_indices[foo, :]
 
-    interval_indices = np.cumsum(interval_indices, axis=0) - 1
+    interval_indices = np.abe(np.cumsum(interval_indices, axis=0)) - 1
     return interval_points, interval_indices
 
 
